@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../api/user_service.dart';
 import '../widgets/mainlayout.dart';
+import '../api/role_service.dart';
+import 'responsive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'pull_to_refresh.dart';
 
 class UsermanAgementScreen extends StatefulWidget {
   const UsermanAgementScreen({super.key});
@@ -22,26 +26,55 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  String selectedRole = "admin";
+  String? selectedRole;
 
   List users = [];
   List filteredUsers = [];
+  List roles = [];
 
   bool isLoading = true;
 
   final TextEditingController searchController = TextEditingController();
 
+  List<String> permissions = [];
+
+  bool hasPermission(String permission) {
+    return permissions.contains(permission);
+  }
+
   @override
   void initState() {
     super.initState();
     loadData();
+    loadRoles();
+    loadPermissions();
+  }
+
+  Future<void> loadPermissions() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      permissions = prefs.getStringList("permissions") ?? [];
+    });
+  }
+
+  Future<void> loadRoles() async {
+    try {
+      final response = await RoleService.getRoles();
+
+      setState(() {
+        roles = response["data"] ?? [];
+      });
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<void> updateUser() async {
     final body = {
       "name": editNameController.text,
       "email": editEmailController.text,
-      "role": "admin",
+      "role": selectedRole,
     };
 
     final response = await UserService.updateUser(editUserId, body);
@@ -64,7 +97,7 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
 
     editEmailController.text = item["email"];
 
-    editRole = "admin";
+    selectedRole = item["role"]["_id"];
 
     showDialog(
       context: context,
@@ -94,13 +127,24 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
 
                     const SizedBox(height: 15),
 
-                    TextFormField(
-                      initialValue: "Super Admin",
-                      readOnly: true,
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
                       decoration: const InputDecoration(
                         labelText: "Role",
                         border: OutlineInputBorder(),
                       ),
+                      items: roles.map<DropdownMenuItem<String>>((role) {
+                        return DropdownMenuItem<String>(
+                          value:
+                              role["_id"], // ya role["roleName"], backend ke hisaab se
+                          child: Text(role["name"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedRole = value!;
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -192,20 +236,22 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
                       const SizedBox(height: 15),
 
                       DropdownButtonFormField<String>(
-                        value: "admin",
-
+                        value: selectedRole,
                         decoration: const InputDecoration(
+                          labelText: "Role",
                           border: OutlineInputBorder(),
                         ),
-
-                        items: const [
-                          DropdownMenuItem(
-                            value: "admin",
-                            child: Text("Super Admin"),
-                          ),
-                        ],
-
-                        onChanged: null, // Disable dropdown
+                        items: roles.map<DropdownMenuItem<String>>((role) {
+                          return DropdownMenuItem<String>(
+                            value: role["_id"].toString(),
+                            child: Text(role["name"] ?? ""),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedRole = value;
+                          });
+                        },
                       ),
                     ],
                   ),
@@ -338,10 +384,9 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
             item["email"].toString().toLowerCase().contains(
               value.toLowerCase(),
             ) ||
-           item["role"]["name"]
-    .toString()
-    .toLowerCase()
-    .contains(value.toLowerCase())  ;
+            item["role"]["name"].toString().toLowerCase().contains(
+              value.toLowerCase(),
+            );
       }).toList();
     });
   }
@@ -384,11 +429,21 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!hasPermission("manage_users")) {
+      return const Scaffold(
+        body: Center(
+          child: Text("You don't have permission to access this page"),
+        ),
+      );
+    }
+
     return MainLayout(
       title: "User Management",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          :  PullToRefresh(
+  onRefresh: loadData,
+  child:  SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
@@ -403,7 +458,7 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
                   buildUserList(),
                 ],
               ),
-            ),
+            ),)
     );
   }
 
@@ -427,7 +482,7 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
           ),
         ),
         ElevatedButton.icon(
-          onPressed: showUserDialog,
+          onPressed: hasPermission("manage_users") ? showUserDialog : null,
           icon: const Icon(Icons.add),
           label: const Text("Create User"),
         ),
@@ -483,7 +538,9 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
                     radius: 22,
                     backgroundColor: Colors.indigo.shade100,
                     child: Text(
-                      (item["name"] ?? "U")[0].toUpperCase(),
+                      ((item["name"]?.toString().isNotEmpty ?? false)
+                          ? item["name"].toString()[0].toUpperCase()
+                          : "U"),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.indigo,
@@ -525,7 +582,7 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
                   const SizedBox(width: 6),
 
                   Text(
-                    capitalize(item["role"]?["name"]),
+                    capitalize(item["role"]?["name"]?.toString() ?? "No Role"),
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
 
@@ -559,6 +616,7 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (hasPermission("manage_users"))
                   IconButton(
                     icon: const Icon(Icons.key, color: Colors.orange),
                     onPressed: () {
@@ -566,12 +624,16 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
                     },
                   ),
 
+                  if (hasPermission("manage_users"))
+
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.blue),
                     onPressed: () {
                       showEditDialog(item);
                     },
                   ),
+
+                  if (hasPermission("manage_users"))
 
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/mainlayout.dart';
 import '../api/room_service.dart';
+import 'responsive.dart';
 
 class RoomsAndInventoryscreen extends StatefulWidget {
   const RoomsAndInventoryscreen({super.key});
@@ -588,6 +589,10 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
 
   @override
   Widget build(BuildContext context) {
+
+  
+
+
     return MainLayout(
       title: "Rooms & Inventory",
 

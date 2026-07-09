@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/mainlayout.dart';
 import '../api/resident_service.dart';
+import 'responsive.dart';
+
+
+import 'pull_to_refresh.dart';
 
 class AllresidentSscreen extends StatefulWidget {
   const AllresidentSscreen({super.key});
@@ -10,6 +14,9 @@ class AllresidentSscreen extends StatefulWidget {
 }
 
 class _AllresidentSscreenState extends State<AllresidentSscreen> {
+
+  
+
   final TextEditingController searchController = TextEditingController();
 
   final residentIdController = TextEditingController();
@@ -526,11 +533,16 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
 
   @override
   Widget build(BuildContext context) {
+  
+
     return MainLayout(
       title: "All Residents",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          :PullToRefresh(
+          onRefresh: loadData,
+          child: SingleChildScrollView(
+             physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,12 +559,13 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
                 ],
               ),
             ),
+            )
     );
   }
 
   Widget _header() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
       children: [
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,9 +581,10 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
             ),
           ],
         ),
+        SizedBox(height: 7),
 
         ElevatedButton.icon(
-          onPressed: () {
+          onPressed: () { 
             _showResidentDialog();
           },
           icon: const Icon(Icons.add),
@@ -589,87 +603,119 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _filterCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+  return Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(.05),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+
+        /// Search Box
+        TextField(
+          controller: searchController,
+          onChanged: searchResidents,
+          decoration: InputDecoration(
+            hintText: "Search by name, room number, id...",
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: TextField(
-              controller: searchController,
-              onChanged: searchResidents,
-              decoration: InputDecoration(
-                hintText: "Search by name, room number, id...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+        ),
+
+        const SizedBox(height: 18),
+
+        /// Dropdowns
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: selectedBlock,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
                 ),
+                items: const [
+                  DropdownMenuItem(
+                    value: "All Blocks",
+                    child: Text("All Blocks"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Block A",
+                    child: Text("Block A"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Block B",
+                    child: Text("Block B"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Block C",
+                    child: Text("Block C"),
+                  ),
+                ],
+                onChanged: (v) {
+                  setState(() {
+                    selectedBlock = v!;
+                  });
+                },
               ),
             ),
-          ),
 
-          const SizedBox(width: 18),
+            const SizedBox(width: 18),
 
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              value: selectedBlock,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(
-                  value: "All Blocks",
-                  child: Text("All Blocks"),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: selectedStatus,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder( ),
                 ),
-                DropdownMenuItem(value: "Block A", child: Text("Block A")),
-                DropdownMenuItem(value: "Block B", child: Text("Block B")),
-                DropdownMenuItem(value: "Block C", child: Text("Block C")),
-              ],
-              onChanged: (v) {
-                setState(() {
-                  selectedBlock = v!;
-                });
-              },
+                items: const [
+                  DropdownMenuItem(
+                    value: "All Status",
+                    child: Text("All Status"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Present",
+                    child: Text("Present"),
+                  ),
+                  DropdownMenuItem(
+                    value: "Outside",
+                    child: Text("Outside"),
+                  ),
+                ],
+                onChanged: (v) {
+                  setState(() {
+                    selectedStatus = v!;
+                  });
+                },
+              ),
             ),
-          ),
-
-          const SizedBox(width: 18),
-
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              value: selectedStatus,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(
-                  value: "All Status",
-                  child: Text("All Status"),
-                ),
-                DropdownMenuItem(value: "Present", child: Text("Present")),
-                DropdownMenuItem(value: "Outside", child: Text("Outside")),
-              ],
-              onChanged: (v) {
-                setState(() {
-                  selectedStatus = v!;
-                });
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _residentTable() {
-    return Container(
+    return SingleChildScrollView(
+  scrollDirection: Axis.horizontal,
+  child: SizedBox(
+    width: 1300, // ya 1400
+    child:
+    
+    
+    
+    
+    Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -740,7 +786,8 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
           ),
         ],
       ),
-    );
+    )
+    ));
   }
 
   Widget _residentRow(Map<String, dynamic> resident) {

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/mainlayout.dart';
+
 import '../api/visitor_service.dart';
+import 'responsive.dart';
+import 'pull_to_refresh.dart';
 
 class VisitorApprovalsScreen extends StatefulWidget {
   const VisitorApprovalsScreen({super.key});
@@ -120,33 +123,35 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+          : PullToRefresh(
+              onRefresh: loadData,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
 
-              child: Column(
-                children: [
-                  buildTopBar(),
+                child: Column(
+                  children: [
+                    buildTopBar(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  buildTopCards(),
+                    // buildTopCards(),
+                    const SizedBox(height: 20),
 
-                  const SizedBox(height: 20),
+                    buildSearchSection(),
 
-                  buildSearchSection(),
-
-                  const SizedBox(height: 20),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: 1000,
-                      child: Column(
-                        children: [buildTableHeader(), buildVisitorTable()],
+                    const SizedBox(height: 20),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: 1000,
+                        child: Column(
+                          children: [buildTableHeader(), buildVisitorTable()],
+                        ),
                       ),
                     ),
-                  ),
-                  // buildVisitorTable(),
-                ],
+                    // buildVisitorTable(),
+                  ],
+                ),
               ),
             ),
     );
@@ -155,40 +160,39 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
   //==================== TOP BAR ====================
 
   Widget buildTopBar() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Visitor Management",
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
-
-              SizedBox(height: 5),
-
-              Text(
-                "Track and manage hostel visitors efficiently.",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
+        const Text(
+          "Visitor Management",
+          style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
         ),
 
-        ElevatedButton.icon(
-          onPressed: () {},
+        const SizedBox(height: 5),
 
-          icon: const Icon(Icons.add),
+        const Text(
+          "Track and manage hostel visitors efficiently.",
+          style: TextStyle(color: Colors.grey),
+        ),
 
-          label: const Text("+ Add Visitor"),
+        const SizedBox(height: 20),
 
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton.icon(
+            onPressed: () {},
+
+            icon: const Icon(Icons.add),
+
+            label: const Text("Add Visitor"),
+
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
@@ -198,7 +202,7 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
 
   //==================== TOP CARDS ====================
 
-  Widget buildTopCards() {
+  /*Widget buildTopCards() {
     return LayoutBuilder(
       builder: (context, constraints) {
         int count = constraints.maxWidth > 900 ? 4 : 2;
@@ -222,11 +226,13 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
             dashboardCard("APPROVED", "18", Icons.check_circle, Colors.green),
 
             dashboardCard("CHECK OUT", "2", Icons.logout, Colors.purple),
+            
           ],
         );
       },
+      
     );
-  }
+  }*/
 
   Widget buildTableHeader() {
     return Container(
@@ -434,46 +440,52 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
       ),
     );
   }
+  //dashboardCard
 
   Widget dashboardCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 10)],
-      ),
-
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-
-              children: [
-                Text(title),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
-          ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: color.withOpacity(.12),
+              child: Icon(icon, color: color, size: 24),
+            ),
 
-          CircleAvatar(
-            backgroundColor: color.withOpacity(.15),
+            const SizedBox(height: 18),
 
-            child: Icon(icon, color: color),
-          ),
-        ],
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              title,
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }

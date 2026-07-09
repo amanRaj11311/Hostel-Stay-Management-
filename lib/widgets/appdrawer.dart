@@ -25,6 +25,7 @@ class AppDrawer extends StatefulWidget {
 class _AppDrawerState extends State<AppDrawer> {
   String userName = "";
   String userRole = "";
+  List<String> permissions = [];
 
   @override
   void initState() {
@@ -33,13 +34,14 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Future<void> loadUser() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  setState(() {
-    userName = prefs.getString("userName") ?? "";
-    userRole = prefs.getString("userRole") ?? "";
-  });
-}
+    setState(() {
+      userName = prefs.getString("userName") ?? "";
+      userRole = prefs.getString("userRole") ?? "";
+      permissions = prefs.getStringList("permissions") ?? [];
+    });
+  }
 
   String getInitials(String name) {
     if (name.trim().isEmpty) return "";
@@ -51,6 +53,10 @@ class _AppDrawerState extends State<AppDrawer> {
     }
 
     return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  bool hasPermission(String permission) {
+    return permissions.contains(permission);
   }
 
   Future<void> logout(BuildContext context) async {
@@ -194,92 +200,112 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                 ),
 
-                drawerLabel("Main Operations"),
+                if (hasPermission("manage_dashboard") ||
+                    hasPermission("manage_attendance"))
+                  drawerLabel("Main Operations"),
 
-                drawerItem(
-                  context,
-                  Icons.dashboard,
-                  "Dashboard",
-                  const DashboardScreen(),
-                ),
+                if (hasPermission("manage_dashboard"))
+                  drawerItem(
+                    context,
+                    Icons.dashboard,
+                    "Dashboard",
+                    const DashboardScreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.check_box_outlined,
-                  "Live Attendance",
-                  const LiveAttendanceScreen(),
-                ),
+                if (hasPermission("manage_attendance"))
+                  drawerItem(
+                    context,
+                    Icons.check_box_outlined,
+                    "Live Attendance",
+                    const LiveAttendanceScreen(),
+                  ),
 
-                drawerLabel("Admission Module"),
+                if (hasPermission("manage_residents"))
+                  drawerLabel("Admission Module"),
 
-                drawerItem(
-                  context,
-                  Icons.person_add_alt_1,
-                  "Registration Requests",
-                  const RegistrationReqestsScreen(),
-                ),
+                if (hasPermission("manage_residents"))
+                  drawerItem(
+                    context,
+                    Icons.person_add_alt_1,
+                    "Registration Requests",
+                    const RegistrationReqestsScreen(),
+                  ),
+                if (hasPermission("manage_residents"))
+                  drawerItem(
+                    context,
+                    Icons.groups,
+                    "All Residents",
+                    const AllresidentSscreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.groups,
-                  "All Residents",
-                  const AllresidentSscreen(),
-                ),
+                if (hasPermission("manage_rooms") ||
+                    hasPermission("manage_visitors"))
+                  drawerLabel("Hostel Management"),
 
-                drawerLabel("Hostel Management"),
+                if (hasPermission("manage_rooms"))
+                  drawerItem(
+                    context,
+                    Icons.hotel,
+                    "Rooms & Inventory",
+                    const RoomsAndInventoryscreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.hotel,
-                  "Rooms & Inventory",
-                  const RoomsAndInventoryscreen(),
-                ),
+                if (hasPermission("manage_visitors"))
+                  drawerItem(
+                    context,
+                    Icons.verified_user_outlined,
+                    "Visitor Approvals",
+                    const VisitorApprovalsScreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.verified_user_outlined,
-                  "Visitor Approvals",
-                  const VisitorApprovalsScreen(),
-                ),
+                if (hasPermission("manage_fees") ||
+                    hasPermission("manage_complaints") ||
+                    hasPermission("manage_announcements"))
+                  drawerLabel("Accounts & Support"),
 
-                drawerLabel("Accounts & Support"),
+                if (hasPermission("manage_fees"))
+                  drawerItem(
+                    context,
+                    Icons.currency_rupee,
+                    "Fee Collection",
+                    const FeesCollectionScreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.currency_rupee,
-                  "Fee Collection",
-                  const FeesCollectionScreen(),
-                ),
+                if (hasPermission("manage_complaints"))
+                  drawerItem(
+                    context,
+                    Icons.support_agent,
+                    "Complaints & Help",
+                    const ComplaintsAndHelpscreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.support_agent,
-                  "Complaints & Help",
-                  const ComplaintsAndHelpscreen(),
-                ),
+                if (hasPermission("manage_announcements"))
+                  drawerItem(
+                    context,
+                    Icons.campaign,
+                    "Announcement",
+                    const AnnouncementScreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.campaign,
-                  "Announcement",
-                  const AnnouncementScreen(),
-                ),
+                if (hasPermission("manage_users") ||
+                    hasPermission("manage_roles"))
+                  drawerLabel("Settings"),
 
-                drawerLabel("Settings"),
+                if (hasPermission("manage_users"))
+                  drawerItem(
+                    context,
+                    Icons.people,
+                    "User Management",
+                    const UsermanAgementScreen(),
+                  ),
 
-                drawerItem(
-                  context,
-                  Icons.people,
-                  "User Management",
-                  const UsermanAgementScreen(),
-                ),
-
-                drawerItem(
-                  context,
-                  Icons.settings,
-                  "Roles & Permissions",
-                  const RolesAndPermissionsScreens(),
-                ),
+                if (hasPermission("manage_roles"))
+                  drawerItem(
+                    context,
+                    Icons.settings,
+                    "Roles & Permissions",
+                    const RolesAndPermissionsScreens(),
+                  ),
               ],
             ),
           ),

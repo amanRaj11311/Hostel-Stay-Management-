@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/mainlayout.dart';
 import '../api/fee_service.dart';
+import 'responsive.dart';
+import 'pull_to_refresh.dart';
 
 class FeesCollectionScreen extends StatefulWidget {
   const FeesCollectionScreen({super.key});
@@ -20,7 +22,7 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
   final paidAmountController = TextEditingController();
   final receiptNoController = TextEditingController();
 
-  String selectedStatus = "All Status";
+  String selectedStatus = "All";
 
   String feeStatus = "paid";
 
@@ -493,35 +495,40 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    
+
+
     return MainLayout(
       title: "Fee Management",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+          : PullToRefresh(
+  onRefresh: loadFees,
+  child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _header(),
-
-                  const SizedBox(height: 25),
+                  //_header(),
+                  const SizedBox(height: 0),
 
                   _stats(),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 15),
 
                   _searchCard(),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 15),
 
                   _feeTable(),
                 ],
               ),
-            ),
+            ),)
     );
   }
 
-  Widget _header() {
+  /*Widget _header() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -551,20 +558,23 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
         ),
       ],
     );
-  }
+  }*/
 
   Widget _stats() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth < 700 ? 2 : 4;
+       // int crossAxisCount = constraints.maxWidth < 700 ? 2 : 4;
+        bool mobile = constraints.maxWidth < 700;
+        
+
 
         return GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 18,
-          mainAxisSpacing: 18,
-          childAspectRatio: 2.4,
+          crossAxisCount:  mobile ? 2 : 4,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: mobile ? 1.2 : 2.4,
           children: [
             _statCard(
               "Total Records",
@@ -599,52 +609,50 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
     );
   }
 
+  //_statCard
   Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: color.withOpacity(.12),
-            child: Icon(icon, color: color, size: 28),
-          ),
-
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                ),
-              ],
+    return  Container(
+        margin: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: color.withOpacity(.12),
+              child: Icon(icon, color: color, size: 18),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              title,
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+            ),
+          ],
+        ),
     );
   }
 
@@ -662,199 +670,156 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 700) {
-            return Column(
-              children: [
-                TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: "Search by name, ID, room no...",
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 4,
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: "Search by name, ID, room no...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
+              ),
+            ),
+          ),
 
-                const SizedBox(height: 15),
+          const SizedBox(width: 20),
 
-                DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: "All Status",
-                      child: Text("All Status"),
-                    ),
-                    DropdownMenuItem(value: "paid", child: Text("Paid")),
-                    DropdownMenuItem(value: "pending", child: Text("Pending")),
-                    DropdownMenuItem(value: "partial", child: Text("Partial")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedStatus = value!;
-                    });
-                  },
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: selectedStatus,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: "All",
+                  child: Text("All"),
+                ),
+                DropdownMenuItem(value: "paid", child: Text("Paid")),
+                DropdownMenuItem(value: "pending", child: Text("Pending")),
+                DropdownMenuItem(value: "partial", child: Text("Partial")),
               ],
-            );
-          }
-
-          return Row(
-            children: [
-              Expanded(
-                flex: 4,
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: "Search by name, ID, room no...",
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 20),
-
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: "All Status",
-                      child: Text("All Status"),
-                    ),
-                    DropdownMenuItem(value: "paid", child: Text("Paid")),
-                    DropdownMenuItem(value: "pending", child: Text("Pending")),
-                    DropdownMenuItem(value: "partial", child: Text("Partial")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedStatus = value!;
-                    });
-                  },
-                ),
-              ),
-            ],
-          );
-        },
+              onChanged: (value) {
+                setState(() {
+                  selectedStatus = value!;
+                });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _feeTable() {
     return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: SizedBox(
-      width: 1300,
-    
-    child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 18),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(22),
-                topRight: Radius.circular(22),
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: 1300,
+
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 18),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(22),
+                    topRight: Radius.circular(22),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        "STUDENT",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        "COURSE & ROOM",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        "FEE TYPE",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        "AMOUNT",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        "DUE DATE",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        "STATUS",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: Text(
+                        "ACTION",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                  flex: 4,
-                  child: Text(
-                    "STUDENT",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
 
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "COURSE & ROOM",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "FEE TYPE",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "AMOUNT",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "DUE DATE",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "STATUS",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                Expanded(
-                  child: Text(
-                    "ACTION",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredFees.length,
+                separatorBuilder: (_, __) =>
+                    Divider(height: 1, color: Colors.grey.shade200),
+                itemBuilder: (context, index) {
+                  return _feeRow(filteredFees[index]);
+                },
+              ),
+            ],
           ),
-
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: filteredFees.length,
-            separatorBuilder: (_, __) =>
-                Divider(height: 1, color: Colors.grey.shade200),
-            itemBuilder: (context, index) {
-              return _feeRow(filteredFees[index]);
-            },
-          ),
-        ],
+        ),
       ),
-    )
-    )
-     ); // cointainer
+    ); // cointainer
   }
 
   Widget _feeRow(Map<String, dynamic> fee) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/mainlayout.dart';
 import '../api/announcement_service.dart';
+import 'responsive.dart';
+import 'pull_to_refresh.dart';
 
 class AnnouncementScreen extends StatefulWidget {
   const AnnouncementScreen({super.key});
@@ -14,15 +16,11 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   bool isLoading = true;
 
   final titleController = TextEditingController();
-final messageController = TextEditingController();
+  final messageController = TextEditingController();
 
-String selectedCategory = "general";
-String selectedPriority = "low";
-String selectedAudience = "all";
-
-
-
-
+  String selectedCategory = "general";
+  String selectedPriority = "low";
+  String selectedAudience = "all";
 
   @override
   void initState() {
@@ -40,174 +38,194 @@ String selectedAudience = "all";
   }
 
   Future<void> saveAnnouncement() async {
+    final body = {
+      "title": titleController.text.trim(),
+      "message": messageController.text.trim(),
+      "category": selectedCategory,
+      "priority": selectedPriority,
+      "targetAudience": selectedAudience,
+      "expiresAt": DateTime.now()
+          .add(const Duration(days: 7))
+          .toIso8601String(),
+    };
 
-  final body = {
-    "title": titleController.text.trim(),
-    "message": messageController.text.trim(),
-    "category": selectedCategory,
-    "priority": selectedPriority,
-    "targetAudience": selectedAudience,
-    "expiresAt": DateTime.now()
-        .add(const Duration(days: 7))
-        .toIso8601String(),
-  };
+    try {
+      await AnnouncementService.createAnnouncement(body);
 
-  try {
+      Navigator.pop(context);
 
-    await AnnouncementService.createAnnouncement(body);
+      titleController.clear();
+      messageController.clear();
 
-    Navigator.pop(context);
+      loadAnnouncements();
 
-    titleController.clear();
-    messageController.clear();
-
-    loadAnnouncements();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Announcement Posted Successfully"),
-      ),
-    );
-
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString())),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Announcement Posted Successfully")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
-}
 
-void showAnnouncementDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text("New Announcement"),
-            content: SizedBox(
-              width: 500,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: "Title",
+  void showAnnouncementDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text("New Announcement"),
+              content: SizedBox(
+                width: 500,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(labelText: "Title"),
                       ),
-                    ),
 
-                    const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                    TextField(
-                      controller: messageController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: "Message",
+                      TextField(
+                        controller: messageController,
+                        maxLines: 4,
+                        decoration: const InputDecoration(labelText: "Message"),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    Row(
-                      children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: selectedCategory,
+                              decoration: const InputDecoration(
+                                labelText: "Category",
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: "general",
+                                  child: Text("General"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "urgent",
+                                  child: Text("Urgent"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "event",
+                                  child: Text("Event"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "maintenance",
+                                  child: Text("Maintenance"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "policy",
+                                  child: Text("Policy"),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedCategory = value!;
+                                });
+                              },
+                            ),
+                          ),
 
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-  value: selectedCategory,
-  decoration: const InputDecoration(
-    labelText: "Category",
-    border: OutlineInputBorder(),
-  ),
-  items: const [
-    DropdownMenuItem(value: "general", child: Text("General")),
-    DropdownMenuItem(value: "urgent", child: Text("Urgent")),
-    DropdownMenuItem(value: "event", child: Text("Event")),
-    DropdownMenuItem(value: "maintenance", child: Text("Maintenance")),
-    DropdownMenuItem(value: "policy", child: Text("Policy")),
-  ],
-  onChanged: (value) {
-    setState(() {
-      selectedCategory = value!;
-    });
-  },
-),
+                          const SizedBox(width: 15),
+
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: selectedPriority,
+                              decoration: const InputDecoration(
+                                labelText: "Priority",
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: "low",
+                                  child: Text("Low"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "medium",
+                                  child: Text("Medium"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "urgent",
+                                  child: Text("Urgent"),
+                                ),
+                                DropdownMenuItem(
+                                  value: "high",
+                                  child: Text("High"),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedPriority = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      DropdownButtonFormField<String>(
+                        value: selectedAudience,
+                        decoration: const InputDecoration(
+                          labelText: "Audience",
+                          border: OutlineInputBorder(),
                         ),
-
-                        const SizedBox(width: 15),
-
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-  value: selectedPriority,
-  decoration: const InputDecoration(
-    labelText: "Priority",
-    border: OutlineInputBorder(),
-  ),
-  items: const [
-    DropdownMenuItem(value: "low", child: Text("Low")),
-    DropdownMenuItem(value: "medium", child: Text("Medium")),
-    DropdownMenuItem(value: "urgent", child: Text("Urgent")),
-    DropdownMenuItem(value: "high", child: Text("High")),
-  ],
-  onChanged: (value) {
-    setState(() {
-      selectedPriority = value!;
-    });
-  },
-),
-
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    DropdownButtonFormField<String>(
-  value: selectedAudience,
-  decoration: const InputDecoration(
-    labelText: "Audience",
-    border: OutlineInputBorder(),
-  ),
-  items: const [
-    DropdownMenuItem(value: "all", child: Text("All")),
-    DropdownMenuItem(value: "residents", child: Text("Residents")),
-    DropdownMenuItem(value: "staff", child: Text("Staff")),
-  ],
-  onChanged: (value) {
-    setState(() {
-      selectedAudience = value!;
-    });
-  },
-),
-                  ],
+                        items: const [
+                          DropdownMenuItem(value: "all", child: Text("All")),
+                          DropdownMenuItem(
+                            value: "residents",
+                            child: Text("Residents"),
+                          ),
+                          DropdownMenuItem(
+                            value: "staff",
+                            child: Text("Staff"),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedAudience = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            actions: [
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Cancel"),
+                ),
 
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text("Cancel"),
-              ),
-
-              ElevatedButton.icon(
-                onPressed: saveAnnouncement,
-                icon: const Icon(Icons.send, size: 18),
-                label: const Text("Post"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+                ElevatedButton.icon(
+                  onPressed: saveAnnouncement,
+                  icon: const Icon(Icons.send, size: 18),
+                  label: const Text("Post"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -215,88 +233,91 @@ void showAnnouncementDialog() {
       title: "Announcements",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  /// Top Cards
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      int count = constraints.maxWidth > 900 ? 4 : 2;
+          : PullToRefresh(
+              onRefresh: loadAnnouncements,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    /// Top Cards
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        int count = constraints.maxWidth > 900 ? 4 : 2;
 
-                      return GridView.count(
-                        crossAxisCount: count,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 15,
-                        mainAxisSpacing: 15,
-                        childAspectRatio: 2.8,
-                        children: [
-                          dashboardCard(
-                            "TOTAL",
-                            announcements.length.toString(),
-                            Icons.campaign,
-                            Colors.indigo,
-                          ),
+                        return GridView.count(
+                          crossAxisCount: count,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 1,
+                          children: [
+                            dashboardCard(
+                              "TOTAL",
+                              announcements.length.toString(),
+                              Icons.campaign,
+                              Colors.indigo,
+                            ),
 
-                          dashboardCard(
-                            "URGENT",
-                            announcements
-                                .where((e) => e["priority"] == "high")
-                                .length
-                                .toString(),
-                            Icons.priority_high,
-                            Colors.red,
-                          ),
+                            dashboardCard(
+                              "URGENT",
+                              announcements
+                                  .where((e) => e["priority"] == "high")
+                                  .length
+                                  .toString(),
+                              Icons.priority_high,
+                              Colors.red,
+                            ),
 
-                          dashboardCard(
-                            "ACTIVE",
-                            announcements
-                                .where((e) => e["isActive"] == true)
-                                .length
-                                .toString(),
-                            Icons.calendar_today,
-                            Colors.orange,
-                          ),
+                            dashboardCard(
+                              "ACTIVE",
+                              announcements
+                                  .where((e) => e["isActive"] == true)
+                                  .length
+                                  .toString(),
+                              Icons.calendar_today,
+                              Colors.orange,
+                            ),
 
-                          dashboardCard(
-                            "GENERAL",
-                            announcements
-                                .where((e) => e["category"] == "general")
-                                .length
-                                .toString(),
-                            Icons.people,
-                            Colors.green,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: showAnnouncementDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text("New Announcement"),
+                            dashboardCard(
+                              "GENERAL",
+                              announcements
+                                  .where((e) => e["category"] == "general")
+                                  .length
+                                  .toString(),
+                              Icons.people,
+                              Colors.green,
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 25),
 
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: announcements.length,
-                    itemBuilder: (context, index) {
-                      final item = announcements[index];
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed: showAnnouncementDialog,
+                        icon: const Icon(Icons.add),
+                        label: const Text("New Announcement"),
+                      ),
+                    ),
 
-                      return announcementCard(item);
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 20),
+
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: announcements.length,
+                      itemBuilder: (context, index) {
+                        final item = announcements[index];
+
+                        return announcementCard(item);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
     );

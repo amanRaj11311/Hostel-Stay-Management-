@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api.dart';
 import 'DashboardScreen.dart';
+import 'responsive.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -164,6 +165,9 @@ class _LoginPageState extends State<LoginPage> {
                               );
 
                               if (response["success"] == true) {
+                                print(response);
+                                print(response["data"]["role"]);
+                                print(response["data"]["role"]["permissions"]);
                                 SharedPreferences prefs =
                                     await SharedPreferences.getInstance();
 
@@ -187,11 +191,39 @@ class _LoginPageState extends State<LoginPage> {
                                   "userRole",
                                   response["data"]["role"]?["name"] ?? "",
                                 );
+                                final rawPermissions = List<String>.from(
+                                  response["data"]["role"]["permissions"] ?? [],
+                                );
+
+                                const permissionMap = {
+                                  "Dashboard Access": "manage_dashboard",
+                                  "Manage Roles & Permissions": "manage_roles",
+                                  "Manage Users": "manage_users",
+                                  "Manage Residents": "manage_residents",
+                                  "Manage Rooms & Inventory": "manage_rooms",
+                                  "Manage Fee Collection": "manage_fees",
+                                  "Manage Attendance": "manage_attendance",
+                                  "Manage Complaints": "manage_complaints",
+                                  "Manage Visitors": "manage_visitors",
+                                  "Manage Announcements":
+                                      "manage_announcements",
+                                };
+                                final permissions = rawPermissions
+                                    .map((e) => permissionMap[e] ?? e)
+                                    .toList();
+
+                                await prefs.setStringList("permissions", permissions);
 
                                 await prefs.setBool("isLogin", true);
+                                print(prefs.getStringList("permissions"));
+
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text("Login Successful"),
+                                    backgroundColor: Colors.green,
+                                    content: Text(
+                                      "Login Successful",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                 );
 

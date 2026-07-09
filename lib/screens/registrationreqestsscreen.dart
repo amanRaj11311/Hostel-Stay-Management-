@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/mainlayout.dart';
 import '../api/registration_service.dart';
+import 'responsive.dart';
 
 class RegistrationReqestsScreen extends StatefulWidget {
   const RegistrationReqestsScreen({super.key});
@@ -403,6 +404,9 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+   
+
     return MainLayout(
       title: "Registration Requests",
       body: isLoading
@@ -416,8 +420,8 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                     alignment: WrapAlignment.spaceBetween,
                       children: [
                         const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,6 +483,11 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                     ),
 
                     const SizedBox(height: 25),
+                    SingleChildScrollView(
+  scrollDirection: Axis.horizontal,
+  child: SizedBox(
+    width: 1300, // ya 1400
+    child:
 
                     Card(
                       elevation: 5,
@@ -569,7 +578,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                           ),
                         ],
                       ),
-                    ),
+                    ),)),
 
                     const SizedBox(height: 100),
                   ],

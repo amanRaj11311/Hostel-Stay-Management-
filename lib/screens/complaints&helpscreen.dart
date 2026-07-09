@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../api/complaint_service.dart';
 import '../widgets/mainlayout.dart';
+import 'responsive.dart';
 
 class ComplaintsAndHelpscreen extends StatefulWidget {
   const ComplaintsAndHelpscreen({super.key});
@@ -88,7 +89,6 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
 
   Widget buildComplaintTable() {
     return ListView.builder(
-      
       itemCount: filteredComplaints.length,
       itemBuilder: (context, index) {
         final item = filteredComplaints[index];
@@ -102,7 +102,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
             children: [
               /// Student
               SizedBox(
-                width: 180,
+                width: context.w * 0.35,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -112,26 +112,38 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
                 ),
               ),
 
-              SizedBox(width: 80, child: Text(item["roomNo"])),
-
-              SizedBox(width: 120, child: Text(capitalize(item["category"]))),
+              SizedBox(width: context.w * 0.18, child: Text(item["roomNo"])),
 
               SizedBox(
-                width: 250,
+                width: context.w * 0.22,
+                child: Text(capitalize(item["category"])),
+              ),
+
+              SizedBox(
+                width: context.w * 0.45,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [Text(item["title"]), Text(item["description"])],
                 ),
               ),
 
-              SizedBox(width: 120, child: buildPriorityChip(item["priority"])),
-
-              SizedBox(width: 120, child: Text(formatDate(item["createdAt"]))),
-
-              SizedBox(width: 120, child: buildStatusChip(item["status"])),
+              SizedBox(
+                width: context.w * 0.22,
+                child: buildPriorityChip(item["priority"]),
+              ),
 
               SizedBox(
-                width: 120,
+                width: context.w * 0.22,
+                child: Text(formatDate(item["createdAt"])),
+              ),
+
+              SizedBox(
+                width: context.w * 0.22,
+                child: buildStatusChip(item["status"]),
+              ),
+
+              SizedBox(
+                width: context.w * 0.25,
                 child: Row(
                   children: [
                     IconButton(icon: const Icon(Icons.edit), onPressed: () {}),
@@ -408,29 +420,29 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.w * 0.04),
 
               child: Column(
                 children: [
                   buildTopBar(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.h * 0.02),
 
                   buildTopCards(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.h * 0.02),
 
                   buildSearchSection(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.h * 0.02),
 
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SizedBox(
-                      width: 1110,
+                      width: context.w * 2.2,
                       child: Column(
                         children: [
                           buildTableHeader(),
 
                           SizedBox(
-                            height: 500, // jitni height chahiye
+                            height: context.h * 0.65, 
                             child: buildComplaintTable(),
                           ),
                         ],
@@ -444,46 +456,21 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
   }
 
   Widget buildTopBar() {
-    return Row(
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-              Text(
-                "Complaints",
-
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
-
-              SizedBox(height: 5),
-
-              Text(
-                "Track and manage student complaints.",
-
-                style: TextStyle(color: Colors.grey),
-              ),
-            ],
+    return Align(
+      alignment: Alignment.centerRight,
+      child: ElevatedButton.icon(
+        onPressed: showComplaintDialog,
+        icon: const Icon(Icons.add),
+        label: const Text("Add Complaint"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w * 0.03,
+            vertical: context.h * 0.015,
           ),
         ),
-
-        ElevatedButton.icon(
-          onPressed: showComplaintDialog,
-
-          icon: const Icon(Icons.add),
-
-          label: const Text("Add Complaint"),
-
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.indigo,
-
-            foregroundColor: Colors.white,
-
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -492,8 +479,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
       children: [
         Expanded(
           child: SizedBox(
-            height: 45,
-
+            width: context.w * 0.32,
             child: TextField(
               controller: searchController,
 
@@ -505,7 +491,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
                 prefixIcon: const Icon(Icons.search),
 
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(context.w * 0.03),
                 ),
               ),
             ),
@@ -515,12 +501,12 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
         const SizedBox(width: 20),
 
         SizedBox(
-          width: 180,
+          width: context.w * 0.32,
           child: DropdownButtonFormField<String>(
             value: selectedStatus,
             decoration: InputDecoration(
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(context.w * 0.03),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
@@ -622,7 +608,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
   Widget buildTopCards() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        int count = constraints.maxWidth > 900 ? 4 : 2;
+        int count = constraints.maxWidth > 500 ? 4 : 2;
 
         return GridView.count(
           shrinkWrap: true,
@@ -635,7 +621,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
 
           mainAxisSpacing: 15,
 
-          childAspectRatio: 2.8,
+          childAspectRatio: 2.0,
 
           children: [
             dashboardCard(
@@ -682,12 +668,12 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
 
   Widget dashboardCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(18),
+     padding: const EdgeInsets.all(12),
 
       decoration: BoxDecoration(
         color: Colors.white,
 
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(context.w * 0.03),
 
         boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 10)],
       ),
@@ -699,15 +685,23 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
 
               children: [
-                Text(title),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: context.w * 0.028,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
 
                 const SizedBox(height: 8),
 
                 Text(
-                  value,
+                  value,  
 
-                  style: const TextStyle(
-                    fontSize: 28,
+                  style: TextStyle(
+                    fontSize: context.w * 0.026,
 
                     fontWeight: FontWeight.bold,
                   ),
@@ -717,9 +711,9 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
           ),
 
           CircleAvatar(
+            radius: context.w * 0.045,  
             backgroundColor: color.withOpacity(.15),
-
-            child: Icon(icon, color: color),
+            child: Icon(icon, size: context.w * 0.04, color: color),
           ),
         ],
       ),
