@@ -19,6 +19,7 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
   List stats = [];
 
   bool isLoading = true;
+  bool showSearch = false;
 
   final TextEditingController searchController = TextEditingController();
 
@@ -140,15 +141,7 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
                     buildSearchSection(),
 
                     const SizedBox(height: 20),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SizedBox(
-                        width: 1000,
-                        child: Column(
-                          children: [buildTableHeader(), buildVisitorTable()],
-                        ),
-                      ),
-                    ),
+                    buildVisitorCards(),
                     // buildVisitorTable(),
                   ],
                 ),
@@ -163,38 +156,44 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Visitor Management",
-          style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                "Visitor Management",
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            ElevatedButton.icon(
+              onPressed: () {},
+
+              icon: const Icon(Icons.add),
+
+              label: const Text("Add Visitor"),
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 13,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ),
 
-        const SizedBox(height: 5),
+        const SizedBox(height: 6),
 
         const Text(
           "Track and manage hostel visitors efficiently.",
           style: TextStyle(color: Colors.grey),
-        ),
-
-        const SizedBox(height: 20),
-
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: () {},
-
-            icon: const Icon(Icons.add),
-
-            label: const Text("Add Visitor"),
-
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
         ),
       ],
     );
@@ -234,71 +233,7 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
     );
   }*/
 
-  Widget buildTableHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-      color: Colors.grey.shade200,
-
-      child: const Row(
-        children: [
-          SizedBox(
-            width: 180,
-            child: Text(
-              "Visitor",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          SizedBox(
-            width: 150,
-            child: Text(
-              "Student",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          SizedBox(
-            width: 100,
-            child: Text("Room", style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-
-          SizedBox(
-            width: 150,
-            child: Text(
-              "Mobile",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          SizedBox(
-            width: 150,
-            child: Text(
-              "Check In/Out",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          SizedBox(
-            width: 120,
-            child: Text(
-              "Status",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          SizedBox(
-            width: 150,
-            child: Text(
-              "Actions",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildVisitorTable() {
+  Widget buildVisitorCards() {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -306,72 +241,151 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
       itemBuilder: (context, index) {
         final item = filteredVisitors[index];
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xffeeeeee))),
+        final status = item["status"] ?? "pending";
+
+        Color statusColor;
+
+        switch (status) {
+          case "approved":
+            statusColor = Colors.green;
+            break;
+          case "rejected":
+            statusColor = Colors.red;
+            break;
+          case "checked_out":
+            statusColor = Colors.orange;
+            break;
+          default:
+            statusColor = Colors.blue;
+        }
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 18),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
           ),
-
-          child: Row(
-            children: [
-              /// Visitor Name
-              SizedBox(
-                width: 170,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// Header
+                Row(
                   children: [
-                    Text(
-                      item["visitorName"] ?? "-",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor: Colors.indigo.shade100,
+                      child: Text(
+                        (item["visitorName"] ?? "V")
+                            .toString()
+                            .substring(0, 1)
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo,
+                        ),
+                      ),
                     ),
-                    Text(
-                      item["phone"] ?? "",
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item["visitorName"] ?? "-",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            item["phone"] ?? "-",
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    buildStatusChip(status),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _infoTile(
+                        Icons.person,
+                        "Student",
+                        item["studentName"] ?? "-",
+                      ),
+                    ),
+
+                    Expanded(
+                      child: _infoTile(
+                        Icons.people,
+                        "Relation",
+                        capitalize(item["relation"]),
+                      ),
                     ),
                   ],
                 ),
-              ),
 
-              /// Student
-              SizedBox(width: 170, child: Text(item["studentName"] ?? "-")),
+                const SizedBox(height: 12),
 
-              /// Relation
-              SizedBox(width: 120, child: Text(capitalize(item["relation"]))),
-
-              /// Mobile
-              SizedBox(width: 150, child: Text(item["phone"] ?? "-")),
-
-              /// Check In
-              SizedBox(
-                width: 170,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Text(
-                      "In: ${item["checkInTime"] ?? "--"}",
-                      style: const TextStyle(color: Colors.green),
+                    Expanded(
+                      child: _infoTile(
+                        Icons.meeting_room,
+                        "Room",
+                        item["roomNo"] ?? "-",
+                      ),
                     ),
 
-                    Text(
-                      "Out: ${item["checkOutTime"] ?? "--"}",
-                      style: const TextStyle(color: Colors.orange),
+                    Expanded(
+                      child: _infoTile(
+                        Icons.calendar_today,
+                        "Date",
+                        formatDate(item["createdAt"]),
+                      ),
                     ),
                   ],
                 ),
-              ),
 
-              /// Status
-              SizedBox(
-                width: 120,
-                child: buildStatusChip(item["status"] ?? ""),
-              ),
+                const SizedBox(height: 12),
 
-              /// Actions
-              SizedBox(
-                width: 180,
-                child: Row(
+                Row(
+                  children: [
+                    Expanded(
+                      child: _infoTile(
+                        Icons.login,
+                        "Check In",
+                        item["checkInTime"] ?? "--",
+                      ),
+                    ),
+
+                    Expanded(
+                      child: _infoTile(
+                        Icons.logout,
+                        "Check Out",
+                        item["checkOutTime"] ?? "--",
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Divider(height: 28),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
+                      tooltip: "Approve",
                       icon: const Icon(Icons.check_circle, color: Colors.green),
                       onPressed: () {
                         approveVisitor(item["_id"]);
@@ -379,6 +393,7 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
                     ),
 
                     IconButton(
+                      tooltip: "Reject",
                       icon: const Icon(Icons.cancel, color: Colors.red),
                       onPressed: () {
                         rejectVisitor(item["_id"]);
@@ -386,6 +401,7 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
                     ),
 
                     IconButton(
+                      tooltip: "Check Out",
                       icon: const Icon(Icons.logout, color: Colors.orange),
                       onPressed: () {
                         checkoutVisitor(item["_id"]);
@@ -393,8 +409,8 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -493,64 +509,118 @@ class _VisitorApprovalsScreenState extends State<VisitorApprovalsScreen> {
   //==================== SEARCH ====================
 
   Widget buildSearchSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 45,
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (!showSearch)
+            Row(
+              children: [
+                const Spacer(),
 
-            child: TextField(
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    setState(() {
+                      showSearch = true;
+                    });
+                  },
+                ),
+
+                const SizedBox(width: 15),
+
+                SizedBox(width: 180, child: statusDropdown()),
+              ],
+            ),
+
+          if (showSearch) ...[
+            TextField(
               controller: searchController,
-
+              onChanged: searchVisitor,
               decoration: InputDecoration(
-                hintText: "Search by visitor, student, room no...",
-
+                hintText: "Search...",
                 prefixIcon: const Icon(Icons.search),
-
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    setState(() {
+                      showSearch = false;
+                      searchController.clear();
+                    });
+                    searchVisitor("");
+                  },
                 ),
               ),
             ),
-          ),
+
+            const SizedBox(height: 15),
+
+            SizedBox(width: double.infinity, child: statusDropdown()),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: Colors.indigo.withOpacity(.08),
+          child: Icon(icon, size: 18, color: Colors.indigo),
         ),
 
-        const SizedBox(width: 20),
+        const SizedBox(width: 10),
 
-        SizedBox(
-          width: 180,
-
-          child: DropdownButtonFormField<String>(
-            value: selectedStatus,
-
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-            ),
-
-            items: const [
-              DropdownMenuItem(value: "All", child: Text("All Status")),
-
-              DropdownMenuItem(value: "pending", child: Text("Pending")),
-
-              DropdownMenuItem(value: "approved", child: Text("Approved")),
-
-              DropdownMenuItem(value: "completed", child: Text("Completed")),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
-
-            onChanged: (value) {
-              setState(() {
-                selectedStatus = value!;
-              });
-            },
           ),
         ),
       ],
+    );
+  }
+
+  Widget statusDropdown() {
+    return DropdownButtonFormField<String>(
+      value: selectedStatus,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      items: const [
+        DropdownMenuItem(value: "All", child: Text("All Status")),
+        DropdownMenuItem(value: "pending", child: Text("Pending")),
+        DropdownMenuItem(value: "approved", child: Text("Approved")),
+        DropdownMenuItem(value: "checked_out", child: Text("checked_out")),
+      ],
+      onChanged: (value) {
+        setState(() {
+          selectedStatus = value!;
+        });
+        searchVisitor(searchController.text);
+      },
     );
   }
 }
