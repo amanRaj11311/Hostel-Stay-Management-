@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../api/complaint_service.dart';
 import '../widgets/mainlayout.dart';
 import 'responsive.dart';
+import 'pull_to_refresh.dart';
 
 class ComplaintsAndHelpscreen extends StatefulWidget {
   const ComplaintsAndHelpscreen({super.key});
@@ -102,7 +103,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
             children: [
               /// Student
               SizedBox(
-                width: context.w * 0.35,
+                width: 180,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -112,15 +113,15 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
                 ),
               ),
 
-              SizedBox(width: context.w * 0.18, child: Text(item["roomNo"])),
+              SizedBox(width: 80, child: Text(item["roomNo"])),
 
               SizedBox(
-                width: context.w * 0.22,
+                width: 120,
                 child: Text(capitalize(item["category"])),
               ),
 
               SizedBox(
-                width: context.w * 0.45,
+                width: 250,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [Text(item["title"]), Text(item["description"])],
@@ -128,22 +129,22 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
               ),
 
               SizedBox(
-                width: context.w * 0.22,
+                width:  120,
                 child: buildPriorityChip(item["priority"]),
               ),
 
               SizedBox(
-                width: context.w * 0.22,
+                width:  120,
                 child: Text(formatDate(item["createdAt"])),
               ),
 
               SizedBox(
-                width: context.w * 0.22,
+                width:  120,
                 child: buildStatusChip(item["status"]),
               ),
 
               SizedBox(
-                width: context.w * 0.25,
+                width: 120,
                 child: Row(
                   children: [
                     IconButton(icon: const Icon(Icons.edit), onPressed: () {}),
@@ -436,7 +437,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SizedBox(
-                      width: context.w * 2.2,
+                      width: context.w * 3.1,
                       child: Column(
                         children: [
                           buildTableHeader(),
@@ -514,7 +515,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
               ),
             ),
             items: const [
-              DropdownMenuItem(value: "All", child: Text("All Status")),
+              DropdownMenuItem(value: "All", child: Text("All")),
               DropdownMenuItem(value: "pending", child: Text("Pending")),
               DropdownMenuItem(value: "resolved", child: Text("Resolved")),
               DropdownMenuItem(

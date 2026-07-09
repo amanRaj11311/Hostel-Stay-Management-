@@ -495,36 +495,33 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-    
-
-
     return MainLayout(
       title: "Fee Management",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : PullToRefresh(
-  onRefresh: loadFees,
-  child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  //_header(),
-                  const SizedBox(height: 0),
+              onRefresh: loadFees,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    //_header(),
+                    const SizedBox(height: 0),
 
-                  _stats(),
+                    _stats(),
 
-                  const SizedBox(height: 15),
+                    const SizedBox(height: 15),
 
-                  _searchCard(),
+                    _searchCard(),
 
-                  const SizedBox(height: 15),
+                    const SizedBox(height: 15),
 
-                  _feeTable(),
-                ],
+                    _feeTable(),
+                  ],
+                ),
               ),
-            ),)
+            ),
     );
   }
 
@@ -563,15 +560,13 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
   Widget _stats() {
     return LayoutBuilder(
       builder: (context, constraints) {
-       // int crossAxisCount = constraints.maxWidth < 700 ? 2 : 4;
+        // int crossAxisCount = constraints.maxWidth < 700 ? 2 : 4;
         bool mobile = constraints.maxWidth < 700;
-        
-
 
         return GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount:  mobile ? 2 : 4,
+          crossAxisCount: mobile ? 2 : 4,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
           childAspectRatio: mobile ? 1.2 : 2.4,
@@ -611,48 +606,48 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
 
   //_statCard
   Widget _statCard(String title, String value, IconData icon, Color color) {
-    return  Container(
-        margin: const EdgeInsets.all(6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: color.withOpacity(.12),
-              child: Icon(icon, color: color, size: 18),
-            ),
+    return Container(
+      margin: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: color.withOpacity(.12),
+            child: Icon(icon, color: color, size: 18),
+          ),
 
-            const SizedBox(height: 4),
+          const SizedBox(height: 4),
 
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
+          ),
 
-            const SizedBox(height: 4),
+          const SizedBox(height: 4),
 
-            Text(
-              title,
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-            ),
-          ],
-        ),
+          Text(
+            title,
+            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 
@@ -697,10 +692,7 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
                 ),
               ),
               items: const [
-                DropdownMenuItem(
-                  value: "All",
-                  child: Text("All"),
-                ),
+                DropdownMenuItem(value: "All", child: Text("All")),
                 DropdownMenuItem(value: "paid", child: Text("Paid")),
                 DropdownMenuItem(value: "pending", child: Text("Pending")),
                 DropdownMenuItem(value: "partial", child: Text("Partial")),

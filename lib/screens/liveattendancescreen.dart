@@ -37,9 +37,9 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : PullToRefresh(
-              onRefresh:     loadAttendance,
+              onRefresh: loadAttendance,
 
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.w * 0.04),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,158 +135,177 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
                     const SizedBox(height: 25),
 
                     /// Table
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columnSpacing: context.w * 0.08,
-                            columns: const [
-                              DataColumn(
-                                label: Text(
-                                  "Student",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: attendanceList.length,
+                      itemBuilder: (context, index) {
+                        final item = attendanceList[index];
 
-                              DataColumn(
-                                label: Text(
-                                  "Room",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                        final isPresent = item["status"] == "present";
 
-                              DataColumn(
-                                label: Text(
-                                  "Date",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-
-                              DataColumn(
-                                label: Text(
-                                  "Check In",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-
-                              DataColumn(
-                                label: Text(
-                                  "Check Out",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-
-                              DataColumn(
-                                label: Text(
-                                  "Status",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-
-                              DataColumn(
-                                label: Text(
-                                  "Action",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-
-                            rows: attendanceList.map<DataRow>((item) {
-                              return DataRow(
-                                cells: [
-                                  DataCell(Text(item["studentName"] ?? "")),
-
-                                  DataCell(Text(item["roomNo"] ?? "")),
-
-                                  DataCell(
-                                    Text(
-                                      item["date"].toString().substring(0, 10),
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 15),
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(context.w * 0.04),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                /// Student Name
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: Colors.indigo.shade100,
+                                      child: const Icon(Icons.person),
                                     ),
-                                  ),
-
-                                  DataCell(
-                                    Text(
-                                      item["checkIn"] == null
-                                          ? "--"
-                                          : item["checkIn"]
-                                                .toString()
-                                                .substring(11, 16),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        item["studentName"] ?? "",
+                                        style: TextStyle(
+                                          fontSize: context.w * 0.045,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                  ),
 
-                                  DataCell(
-                                    Text(
-                                      item["checkOut"] == null
-                                          ? "--"
-                                          : item["checkOut"]
-                                                .toString()
-                                                .substring(11, 16),
-                                    ),
-                                  ),
-
-                                  DataCell(
                                     Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: context.w * 0.04,
-                                        vertical: context.h * 0.015,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: item["status"] == "present"
+                                        color: isPresent
                                             ? Colors.green.shade100
                                             : Colors.orange.shade100,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        item["status"] == "present"
-                                            ? "Inside"
-                                            : "Outside",
+                                        isPresent ? "Inside" : "Outside",
                                         style: TextStyle(
-                                          color: item["status"] == "present"
+                                          color: isPresent
                                               ? Colors.green
                                               : Colors.orange,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
+                                ),
 
-                                  DataCell(
-                                    Row(
-                                      children: [
-                                        if (item["status"] == "present")
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.logout,
-                                              color: Colors.orange,
-                                            ),
-                                            onPressed: () {
-                                              // Checkout API
-                                            },
-                                          ),
+                                const SizedBox(height: 15),
 
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
-                                          ),
-                                          onPressed: () {
-                                            // Delete API
-                                          },
-                                        ),
-                                      ],
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _infoTile(
+                                        Icons.meeting_room,
+                                        "Room",
+                                        item["roomNo"] ?? "",
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
+                                    Expanded(
+                                      child: _infoTile(
+                                        Icons.calendar_today,
+                                        "Date",
+                                        item["date"].toString().substring(
+                                          0,
+                                          10,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _infoTile(
+                                        Icons.login,
+                                        "Check In",
+                                        item["checkIn"] == null
+                                            ? "--"
+                                            : item["checkIn"]
+                                                  .toString()
+                                                  .substring(11, 16),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _infoTile(
+                                        Icons.logout,
+                                        "Check Out",
+                                        item["checkOut"] == null
+                                            ? "--"
+                                            : item["checkOut"]
+                                                  .toString()
+                                                  .substring(11, 16),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const Divider(height: 25),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    if (isPresent)
+                                      ElevatedButton.icon(
+                                        onPressed: () {},
+                                        icon: const Icon(Icons.logout),
+                                        label: const Text("Checkout"),
+                                      ),
+
+                                    const SizedBox(width: 10),
+
+                                    OutlinedButton.icon(
+                                      onPressed: () {},
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      label: const Text(
+                                        "Delete",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ), // yha per lagana hai
-                    ),
+                        );
+                      },
+                    ), // yha per lagana hai
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.indigo),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
     );
   }
 }

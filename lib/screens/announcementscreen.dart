@@ -355,7 +355,7 @@ Widget announcementCard(Map item) {
                       item["title"] ?? "",
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        fontSize: 28,
                       ),
                     ),
 

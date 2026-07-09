@@ -3,7 +3,6 @@ import '../widgets/mainlayout.dart';
 import '../api/resident_service.dart';
 import 'responsive.dart';
 
-
 import 'pull_to_refresh.dart';
 
 class AllresidentSscreen extends StatefulWidget {
@@ -14,9 +13,6 @@ class AllresidentSscreen extends StatefulWidget {
 }
 
 class _AllresidentSscreenState extends State<AllresidentSscreen> {
-
-  
-
   final TextEditingController searchController = TextEditingController();
 
   final residentIdController = TextEditingController();
@@ -533,33 +529,42 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
 
   @override
   Widget build(BuildContext context) {
-  
-
     return MainLayout(
       title: "All Residents",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          :PullToRefresh(
-          onRefresh: loadData,
-          child: SingleChildScrollView(
-             physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _header(),
+          : PullToRefresh(
+              onRefresh: loadData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _header(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  _filterCard(),
+                    _filterCard(),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  _residentTable(),
-                ],
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredResidents.length,
+
+                      itemBuilder: (context, index) {
+                        print("Total Residents: ${filteredResidents.length}");
+                        return _residentCard(filteredResidents[index]);
+                      },
+
+
+                    ),
+                  ],
+                ),
               ),
             ),
-            )
     );
   }
 
@@ -584,7 +589,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
         SizedBox(height: 7),
 
         ElevatedButton.icon(
-          onPressed: () { 
+          onPressed: () {
             _showResidentDialog();
           },
           icon: const Icon(Icons.add),
@@ -603,191 +608,256 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _filterCard() {
-  return Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(.05),
-          blurRadius: 20,
-          offset: const Offset(0, 8),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-
-        /// Search Box
-        TextField(
-          controller: searchController,
-          onChanged: searchResidents,
-          decoration: InputDecoration(
-            hintText: "Search by name, room number, id...",
-            prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 18),
-
-        /// Dropdowns
-        Row(
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: selectedBlock,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: "All Blocks",
-                    child: Text("All Blocks"),
-                  ),
-                  DropdownMenuItem(
-                    value: "Block A",
-                    child: Text("Block A"),
-                  ),
-                  DropdownMenuItem(
-                    value: "Block B",
-                    child: Text("Block B"),
-                  ),
-                  DropdownMenuItem(
-                    value: "Block C",
-                    child: Text("Block C"),
-                  ),
-                ],
-                onChanged: (v) {
-                  setState(() {
-                    selectedBlock = v!;
-                  });
-                },
-              ),
-            ),
-
-            const SizedBox(width: 18),
-
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: selectedStatus,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder( ),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: "All Status",
-                    child: Text("All Status"),
-                  ),
-                  DropdownMenuItem(
-                    value: "Present",
-                    child: Text("Present"),
-                  ),
-                  DropdownMenuItem(
-                    value: "Outside",
-                    child: Text("Outside"),
-                  ),
-                ],
-                onChanged: (v) {
-                  setState(() {
-                    selectedStatus = v!;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _residentTable() {
-    return SingleChildScrollView(
-  scrollDirection: Axis.horizontal,
-  child: SizedBox(
-    width: 1300, // ya 1400
-    child:
-    
-    
-    
-    
-    Container(
+    return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 18),
+          BoxShadow(
+            color: Colors.black.withOpacity(.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(22),
-                topRight: Radius.circular(22),
+          /// Search Box
+          TextField(
+            controller: searchController,
+            onChanged: searchResidents,
+            decoration: InputDecoration(
+              hintText: "Search by name, room number, id...",
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Row(
+          ),
+
+          const SizedBox(height: 18),
+
+          /// Dropdowns
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: selectedBlock,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: "All Blocks",
+                      child: Text("All Blocks"),
+                    ),
+                    DropdownMenuItem(value: "Block A", child: Text("Block A")),
+                    DropdownMenuItem(value: "Block B", child: Text("Block B")),
+                    DropdownMenuItem(value: "Block C", child: Text("Block C")),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      selectedBlock = v!;
+                    });
+                  },
+                ),
+              ),
+
+              const SizedBox(width: 18),
+
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: selectedStatus,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: "All Status",
+                      child: Text("All Status"),
+                    ),
+                    DropdownMenuItem(value: "Present", child: Text("Present")),
+                    DropdownMenuItem(value: "Outside", child: Text("Outside")),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      selectedStatus = v!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _residentCard(Map<String, dynamic> resident) {
+     print(resident["name"]);
+    final status = resident["attendanceStatus"] ?? "present";
+
+    Color statusColor;
+
+    if (status == "present") {
+      statusColor = Colors.green;
+    } else if (status == "outside") {
+      statusColor = Colors.orange;
+    } else {
+      statusColor = Colors.blue;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 18),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Header
+            Row(
               children: [
-                Expanded(
-                  flex: 4,
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: Colors.indigo.shade100,
                   child: Text(
-                    "RESIDENT",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    (resident["name"] ?? "S")
+                        .toString()
+                        .substring(0, 1)
+                        .toUpperCase(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo,
+                    ),
                   ),
                 ),
+
+                const SizedBox(width: 14),
+
                 Expanded(
-                  flex: 3,
-                  child: Text(
-                    "ROOM LOCATION",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        resident["name"] ?? "",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+
+                      Text(
+                        resident["residentId"] ?? "",
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "ACADEMIC GROUP",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "LIVE STATUS",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(.15),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ),
-                Expanded(
                   child: Text(
-                    "REVIEW",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    status.toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
 
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: filteredResidents.length,
-            separatorBuilder: (_, __) =>
-                Divider(height: 1, color: Colors.grey.shade200),
-            itemBuilder: (context, index) {
-              return _residentRow(filteredResidents[index]);
-            },
-          ),
-        ],
+            const SizedBox(height: 18),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _infoTile(
+                    Icons.meeting_room,
+                    "Room",
+                    "${resident["block"]} - ${resident["roomNo"]}",
+                  ),
+                ),
+
+                Expanded(
+                  child: _infoTile(Icons.bed, "Bed", resident["bedNo"] ?? "-"),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _infoTile(
+                    Icons.school,
+                    "Course",
+                    resident["course"] ?? "-",
+                  ),
+                ),
+
+                Expanded(
+                  child: _infoTile(
+                    Icons.account_balance,
+                    "College",
+                    resident["college"] ?? "-",
+                  ),
+                ),
+              ],
+            ),
+
+            const Divider(height: 28),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    _showResidentDetails(resident);
+                  },
+                  icon: const Icon(Icons.visibility),
+                  label: const Text("View"),
+                ),
+
+                const SizedBox(width: 8),
+
+                ElevatedButton.icon(
+                  onPressed: () {
+                    _showResidentDialog(resident: resident);
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text("Edit"),
+                ),
+
+                const SizedBox(width: 8),
+
+                OutlinedButton.icon(
+                  onPressed: () {
+                    _confirmDelete(resident);
+                  },
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  label: const Text(
+                    "Delete",
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    )
-    ));
+    );
   }
 
   Widget _residentRow(Map<String, dynamic> resident) {
@@ -952,6 +1022,31 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
           Expanded(child: Text(value?.toString() ?? "-")),
         ],
       ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String title, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: Colors.indigo),
+
+        const SizedBox(width: 8),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
