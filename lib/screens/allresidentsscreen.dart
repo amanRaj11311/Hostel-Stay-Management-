@@ -40,9 +40,11 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   List residents = [];
 
   List filteredResidents = [];
+  bool showSearch = false;
 
-  String selectedBlock = "All Blocks";
+  String selectedFilterBlock = "All Blocks";
   String selectedStatus = "All Status";
+  String selectedBlock = " A";
 
   @override
   void initState() {
@@ -65,7 +67,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
       roomNoController.text = resident["roomNo"] ?? "";
       bedNoController.text = resident["bedNo"] ?? "";
 
-      selectedBlock = resident["block"] ?? "Block A";
+      selectedBlock = resident["block"] ?? "A";
 
       selectedFeeStatus = resident["feeStatus"] ?? "paid";
       selectedAttendance = resident["attendanceStatus"] ?? "present";
@@ -93,7 +95,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
       roomNoController.clear();
       bedNoController.clear();
 
-      selectedBlock = "Block A";
+      selectedBlock = "A";
 
       selectedFeeStatus = "paid";
       selectedAttendance = "present";
@@ -144,29 +146,22 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
 
                       _field(bedNoController, "Bed No"),
                       DropdownButtonFormField<String>(
-                        value: selectedBlock,
+                        value: selectedFilterBlock,
                         decoration: const InputDecoration(
                           labelText: "Block",
                           border: OutlineInputBorder(),
                         ),
                         items: const [
                           DropdownMenuItem(
-                            value: "Block A",
-                            child: Text("Block A"),
+                            value: "All Blocks",
+                            child: Text("All Blocks"),
                           ),
-                          DropdownMenuItem(
-                            value: "Block B",
-                            child: Text("Block B"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Block C",
-                            child: Text("Block C"),
-                          ),
+                          DropdownMenuItem(value: "A", child: Text("A")),
+                          DropdownMenuItem(value: "B", child: Text("B")),
+                          DropdownMenuItem(value: "C", child: Text("C")),
                         ],
-                        onChanged: (value) {
-                          dialogSetState(() {
-                            selectedBlock = value!;
-                          });
+                        onChanged: (v) {
+                          selectedBlock = v!;
                         },
                       ),
 
@@ -397,6 +392,39 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
     }
   }
 
+  void applyFilters() {
+    setState(() {
+      filteredResidents = residents.where((resident) {
+        // Block filter
+        bool blockMatch = selectedFilterBlock == "All Blocks"
+            ? true
+            : resident["block"] == selectedFilterBlock;
+
+        // Status filter
+        bool statusMatch = selectedStatus == "All Status"
+            ? true
+            : resident["attendanceStatus"].toString().toLowerCase() ==
+                  selectedStatus.toLowerCase();
+
+        // Search filter
+        String search = searchController.text.toLowerCase();
+
+        bool searchMatch =
+            (resident["name"] ?? "").toString().toLowerCase().contains(
+              search,
+            ) ||
+            (resident["residentId"] ?? "").toString().toLowerCase().contains(
+              search,
+            ) ||
+            (resident["roomNo"] ?? "").toString().toLowerCase().contains(
+              search,
+            );
+
+        return blockMatch && statusMatch && searchMatch;
+      }).toList();
+    });
+  }
+
   void _showResidentDetails(Map<String, dynamic> resident) {
     showDialog(
       context: context,
@@ -455,6 +483,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
                       }
                     },
                   ),
+                  SizedBox(height: 10),
 
                   DropdownButtonFormField<String>(
                     value: resident["attendanceStatus"] ?? "present",
@@ -558,8 +587,6 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
                         print("Total Residents: ${filteredResidents.length}");
                         return _residentCard(filteredResidents[index]);
                       },
-
-
                     ),
                   ],
                 ),
@@ -569,39 +596,47 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _header() {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              "All Residents",
-              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+            const Expanded(
+              child: Text(
+                "All Residents",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
             ),
-            SizedBox(height: 6),
-            Text(
-              "Manage active hostelers, track rooms, occupancy, and live status.",
-              style: TextStyle(color: Colors.grey, fontSize: 15),
+
+            const SizedBox(width: 12),
+
+            ElevatedButton.icon(
+              onPressed: () {
+                _showResidentDialog();
+              },
+              icon: const Icon(Icons.add),
+              label: const Text("Add Resident"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff5668F2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 18,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
             ),
           ],
         ),
-        SizedBox(height: 7),
 
-        ElevatedButton.icon(
-          onPressed: () {
-            _showResidentDialog();
-          },
-          icon: const Icon(Icons.add),
-          label: const Text("Add Resident"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xff5668F2),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
+        const SizedBox(height: 6),
+
+        const Text(
+          "Manage active hostelers, track rooms, occupancy, and live status.",
+          style: TextStyle(color: Colors.grey, fontSize: 15),
         ),
       ],
     );
@@ -623,79 +658,170 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
       ),
       child: Column(
         children: [
-          /// Search Box
-          TextField(
-            controller: searchController,
-            onChanged: searchResidents,
-            decoration: InputDecoration(
-              hintText: "Search by name, room number, id...",
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+          if (!showSearch)
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.search, size: 30),
+                  onPressed: () {
+                    setState(() {
+                      showSearch = true;
+                    });
+                  },
+                ),
+
+                const SizedBox(width: 18),
+
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedFilterBlock,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "All Blocks",
+                        child: Text("All Blocks"),
+                      ),
+                      DropdownMenuItem(value: "A", child: Text("Block A")),
+                      DropdownMenuItem(value: "B", child: Text("Block B")),
+                      DropdownMenuItem(value: "C", child: Text("Block C")),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        selectedFilterBlock = v!;
+                      });
+                      applyFilters();
+                    },
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                Flexible(
+                  flex: 1,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "All Status",
+                        child: Text("All Status"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Present",
+                        child: Text("Present"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Outside",
+                        child: Text("Outside"),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        selectedStatus = v!;
+                      });
+                      applyFilters();
+                    },
+                  ),
+                ),
+              ],
+            )
+          else ...[
+            TextField(
+              controller: searchController,
+              onChanged: (_) => applyFilters(),
+              decoration: InputDecoration(
+                hintText: "Search by name, room number, id...",
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    setState(() {
+                      showSearch = false;
+                      searchController.clear();
+                    });
+                    applyFilters();
+                  },
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 18),
+            const SizedBox(height: 10),
 
-          /// Dropdowns
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedBlock,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: "All Blocks",
-                      child: Text("All Blocks"),
+            Row(
+              children: [
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedFilterBlock,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
                     ),
-                    DropdownMenuItem(value: "Block A", child: Text("Block A")),
-                    DropdownMenuItem(value: "Block B", child: Text("Block B")),
-                    DropdownMenuItem(value: "Block C", child: Text("Block C")),
-                  ],
-                  onChanged: (v) {
-                    setState(() {
-                      selectedBlock = v!;
-                    });
-                  },
-                ),
-              ),
-
-              const SizedBox(width: 18),
-
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "All Blocks",
+                        child: Text("All Blocks"),
+                      ),
+                      DropdownMenuItem(value: "A", child: Text("Block A")),
+                      DropdownMenuItem(value: "B", child: Text("Block B")),
+                      DropdownMenuItem(value: "C", child: Text("Block C")),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        selectedFilterBlock = v!;
+                      });
+                      applyFilters();
+                    },
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: "All Status",
-                      child: Text("All Status"),
-                    ),
-                    DropdownMenuItem(value: "Present", child: Text("Present")),
-                    DropdownMenuItem(value: "Outside", child: Text("Outside")),
-                  ],
-                  onChanged: (v) {
-                    setState(() {
-                      selectedStatus = v!;
-                    });
-                  },
                 ),
-              ),
-            ],
-          ),
+
+                const SizedBox(width: 10),
+
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "All Status",
+                        child: Text("All Status"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Present",
+                        child: Text("Present"),
+                      ),
+                      DropdownMenuItem(
+                        value: "Outside",
+                        child: Text("Outside"),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setState(() {
+                        selectedStatus = v!;
+                      });
+                      applyFilters();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget _residentCard(Map<String, dynamic> resident) {
-     print(resident["name"]);
+    print(resident["name"]);
     final status = resident["attendanceStatus"] ?? "present";
 
     Color statusColor;
@@ -1013,7 +1139,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 130,
+            width: 140,
             child: Text(
               title,
               style: const TextStyle(fontWeight: FontWeight.bold),
