@@ -54,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Heading
                 const Text(
-                  "NIA MediCare",
+                  "NIA Hostel",
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Description
                 const Text(
-                  "Hospital Management Mobile App ",
+                  "Hostel Management Mobile App ",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),

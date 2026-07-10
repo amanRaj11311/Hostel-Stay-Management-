@@ -14,6 +14,9 @@ class LiveAttendanceScreen extends StatefulWidget {
 class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
   List attendanceList = [];
   bool isLoading = true;
+  bool showSearch = false;
+  String selectedStatus = "All";
+  List filteredAttendance = [];
 
   @override
   void initState() {
@@ -23,10 +26,26 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
 
   Future<void> loadAttendance() async {
     final response = await AttendanceService.getAttendance();
+    for (var item in attendanceList) {
+  print(item["status"]);
+}
 
     setState(() {
-      attendanceList = response["data"];
+      attendanceList = response["data"] ?? [];
+      filteredAttendance = attendanceList;
       isLoading = false;
+    });
+  }
+
+  void applyFilters() {
+    setState(() {
+      filteredAttendance = attendanceList.where((item) {
+        if (selectedStatus == "All") {
+          return true;
+        }
+
+        return item["status"] == selectedStatus;
+      }).toList();
     });
   }
 
@@ -45,41 +64,45 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// Header
-                    Wrap(
-                      alignment: WrapAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              "Attendance Log",
-                              style: TextStyle(
-                                fontSize: context.w * 0.06,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Text(
+                                "Attendance Log",
+                                style: TextStyle(
+                                  fontSize: context.w * 0.06,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                            SizedBox(height: 5),
-                            Text(
-                              "Track student entry and exit logs in real-time.",
-                              style: TextStyle(color: Colors.grey),
+
+                            const SizedBox(width: 12),
+
+                            ElevatedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.login),
+                              label: const Text("Manual Check In"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.indigo,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: context.w * 0.04,
+                                  vertical: context.h * 0.015,
+                                ),
+                              ),
                             ),
                           ],
                         ),
 
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            // Manual Check In
-                          },
-                          icon: const Icon(Icons.login),
-                          label: const Text("Manual Check In"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: context.w * 0.04,
-                              vertical: context.h * 0.015,
-                            ),
-                          ),
+                        const SizedBox(height: 6),
+
+                        const Text(
+                          "Track student entry and exit logs in real-time.",
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
@@ -87,49 +110,74 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
                     const SizedBox(height: 25),
 
                     /// Search + Filter
-                    Wrap(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: "Search Student",
-                              prefixIcon: const Icon(Icons.search),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.05),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          if (!showSearch)
+                            Row(
+                              children: [
+                                const Spacer(),
+
+                                IconButton(
+                                  icon: const Icon(Icons.search, size: 28),
+                                  onPressed: () {
+                                    setState(() {
+                                      showSearch = true;
+                                    });
+                                  },
+                                ),
+
+                                const SizedBox(width: 15),
+
+                                SizedBox(
+                                  width: 180,
+                                  child: attendanceDropdown(),
+                                ),
+                              ],
+                            ),
+
+                          if (showSearch) ...[
+                            TextField(
+                              decoration: InputDecoration(
+                                hintText: "Search Student",
+                                prefixIcon: const Icon(Icons.search),
+
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () {
+                                    setState(() {
+                                      showSearch = false;
+                                    });
+                                  },
+                                ),
+
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
 
-                        const SizedBox(height: 15),
+                            const SizedBox(height: 15),
 
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: "All",
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                            SizedBox(
+                              width: double.infinity,
+                              child: attendanceDropdown(),
                             ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: "All",
-                                child: Text("All"),
-                              ),
-                              DropdownMenuItem(
-                                value: "present",
-                                child: Text("Inside"),
-                              ),
-                              DropdownMenuItem(
-                                value: "checkedout",
-                                child: Text("Outside"),
-                              ),
-                            ],
-                            onChanged: (value) {},
-                          ),
-                        ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 25),
@@ -138,9 +186,9 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: attendanceList.length,
+                      itemCount: filteredAttendance.length,
                       itemBuilder: (context, index) {
-                        final item = attendanceList[index];
+                        final item = filteredAttendance[index];
 
                         final isPresent = item["status"] == "present";
 
@@ -306,6 +354,26 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget attendanceDropdown() {
+    return DropdownButtonFormField<String>(
+      value: selectedStatus,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      items: const [
+        DropdownMenuItem(value: "All", child: Text("All")),
+        DropdownMenuItem(value: "present", child: Text("Inside")),
+        DropdownMenuItem(value: "checkedout", child: Text("Outside")),
+      ],
+      onChanged: (value) {
+        setState(() {
+          selectedStatus = value!;
+        });
+        applyFilters();
+      },
     );
   }
 }

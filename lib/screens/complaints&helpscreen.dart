@@ -90,80 +90,164 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
 
   Widget buildComplaintTable() {
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: filteredComplaints.length,
       itemBuilder: (context, index) {
         final item = filteredComplaints[index];
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 18),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xffeeeeee))),
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
-            children: [
-              /// Student
-              SizedBox(
-                width: 180,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// Header
+                Row(
                   children: [
-                    Text(item["studentName"]),
-                    Text(item["complaintId"]),
+                    CircleAvatar(
+                      backgroundColor: Colors.indigo.shade100,
+                      child: Text(
+                        (item["studentName"] ?? "S")
+                            .toString()
+                            .substring(0, 1)
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item["studentName"] ?? "-",
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            item["complaintId"] ?? "",
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    buildStatusChip(item["status"]),
                   ],
                 ),
-              ),
 
-              SizedBox(width: 80, child: Text(item["roomNo"])),
+                const SizedBox(height: 18),
 
-              SizedBox(
-                width: 120,
-                child: Text(capitalize(item["category"])),
-              ),
-
-              SizedBox(
-                width: 250,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [Text(item["title"]), Text(item["description"])],
-                ),
-              ),
-
-              SizedBox(
-                width:  120,
-                child: buildPriorityChip(item["priority"]),
-              ),
-
-              SizedBox(
-                width:  120,
-                child: Text(formatDate(item["createdAt"])),
-              ),
-
-              SizedBox(
-                width:  120,
-                child: buildStatusChip(item["status"]),
-              ),
-
-              SizedBox(
-                width: 120,
-                child: Row(
+                Row(
                   children: [
-                    IconButton(icon: const Icon(Icons.edit), onPressed: () {}),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        deleteComplaint(item["_id"]);
-                      },
+                    Expanded(
+                      child: _infoTile(
+                        Icons.meeting_room,
+                        "Room",
+                        item["roomNo"] ?? "-",
+                      ),
+                    ),
+
+                    Expanded(
+                      child: _infoTile(
+                        Icons.category,
+                        "Category",
+                        capitalize(item["category"]),
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _infoTile(
+                        Icons.priority_high,
+                        "Priority",
+                        capitalize(item["priority"]),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: _infoTile(
+                        Icons.calendar_today,
+                        "Date",
+                        formatDate(item["createdAt"]),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  "Complaint",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  item["title"] ?? "",
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  item["description"] ?? "",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+
+                const Divider(height: 28),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        // Edit
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text("Edit"),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        deleteComplaint(item["_id"]);
+                      },
+                      icon: const Icon(Icons.delete),
+                      label: const Text("Delete"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
     );
-
-    //listview
   }
 
   Widget buildPriorityChip(String priority) {
@@ -434,22 +518,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
                   buildSearchSection(),
                   SizedBox(height: context.h * 0.02),
 
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: context.w * 3.1,
-                      child: Column(
-                        children: [
-                          buildTableHeader(),
-
-                          SizedBox(
-                            height: context.h * 0.65, 
-                            child: buildComplaintTable(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  buildComplaintTable(),
                 ],
               ),
             ),
@@ -669,7 +738,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
 
   Widget dashboardCard(String title, String value, IconData icon, Color color) {
     return Container(
-     padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
 
       decoration: BoxDecoration(
         color: Colors.white,
@@ -699,7 +768,7 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
                 const SizedBox(height: 8),
 
                 Text(
-                  value,  
+                  value,
 
                   style: TextStyle(
                     fontSize: context.w * 0.026,
@@ -712,12 +781,33 @@ class _ComplaintsAndHelpScreenState extends State<ComplaintsAndHelpscreen> {
           ),
 
           CircleAvatar(
-            radius: context.w * 0.045,  
+            radius: context.w * 0.045,
             backgroundColor: color.withOpacity(.15),
             child: Icon(icon, size: context.w * 0.04, color: color),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.indigo),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

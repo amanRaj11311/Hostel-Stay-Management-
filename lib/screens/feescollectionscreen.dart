@@ -345,8 +345,20 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
       paidAmountController.text = (fee["paidAmount"] ?? "").toString();
       receiptNoController.text = fee["receiptNo"] ?? "";
 
-      feeStatus = fee["status"] ?? "paid";
-      paymentMode = fee["paymentMode"] ?? "cash";
+      const validStatus = ["paid", "pending", "partial", "overdue"];
+
+      feeStatus = validStatus.contains(fee["status"]) ? fee["status"] : "paid";
+
+      const validPaymentModes = ["cash", "upi", "bank"];
+
+      paymentMode = validPaymentModes.contains(fee["paymentMode"])
+          ? fee["paymentMode"]
+          : "cash";
+
+      print("Status from API = ${fee["status"]}");
+      print("feeStatus = $feeStatus");
+
+      print("paymentMode = $paymentMode");
 
       dueDate = fee["dueDate"] == null
           ? DateTime.now()
@@ -430,7 +442,13 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
                             value: "partial",
                             child: Text("Partial"),
                           ),
+
+                          DropdownMenuItem(
+                            value: "overdue",
+                            child: Text("Overdue"),
+                          ),
                         ],
+
                         onChanged: (v) {
                           dialogSetState(() {
                             feeStatus = v!;
@@ -696,6 +714,7 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
                 DropdownMenuItem(value: "paid", child: Text("Paid")),
                 DropdownMenuItem(value: "pending", child: Text("Pending")),
                 DropdownMenuItem(value: "partial", child: Text("Partial")),
+                DropdownMenuItem(value: "overdue", child: Text("Overdue")),
               ],
               onChanged: (value) {
                 setState(() {
@@ -710,108 +729,214 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
   }
 
   Widget _feeTable() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        width: 1300,
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: filteredFees.length,
+      itemBuilder: (context, index) {
+        return _feeCard(filteredFees[index]);
+      },
+    );
+  }
 
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 18),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 18,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(22),
-                    topRight: Radius.circular(22),
+  Widget _feeCard(Map<String, dynamic> fee) {
+    final Color statusColor = fee["status"] == "paid"
+        ? Colors.green
+        : fee["status"] == "partial"
+        ? Colors.orange
+        : Colors.red;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Student
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.indigo.shade100,
+                  child: Text(
+                    (fee["studentName"] ?? "S")
+                        .toString()
+                        .substring(0, 1)
+                        .toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.indigo,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                child: const Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Text(
-                        "STUDENT",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
 
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        "COURSE & ROOM",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                const SizedBox(width: 12),
 
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        "FEE TYPE",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fee["studentName"] ?? "-",
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
 
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        "AMOUNT",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        "Resident ID : ${fee["residentId"] is Map ? fee["residentId"]["residentId"] ?? "-" : fee["residentId"] ?? "-"}",
                       ),
-                    ),
-
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        "DUE DATE",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        "STATUS",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-
-                    Expanded(
-                      child: Text(
-                        "ACTION",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredFees.length,
-                separatorBuilder: (_, __) =>
-                    Divider(height: 1, color: Colors.grey.shade200),
-                itemBuilder: (context, index) {
-                  return _feeRow(filteredFees[index]);
-                },
-              ),
-            ],
-          ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    fee["status"] ?? "",
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _detailTile(
+                    Icons.meeting_room,
+                    "Room",
+                    fee["roomNo"] ?? "-",
+                  ),
+                ),
+
+                Expanded(
+                  child: _detailTile(
+                    Icons.calendar_month,
+                    "Month",
+                    fee["month"] ?? "-",
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _detailTile(
+                    Icons.currency_rupee,
+                    "Amount",
+                    "₹${fee["amount"]}",
+                  ),
+                ),
+
+                Expanded(
+                  child: _detailTile(
+                    Icons.payments,
+                    "Paid",
+                    "₹${fee["paidAmount"]}",
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _detailTile(
+                    Icons.event,
+                    "Due Date",
+                    fee["dueDate"] == null
+                        ? "-"
+                        : fee["dueDate"].toString().split("T").first,
+                  ),
+                ),
+
+                Expanded(
+                  child: _detailTile(
+                    Icons.receipt,
+                    "Receipt",
+                    fee["receiptNo"] ?? "-",
+                  ),
+                ),
+              ],
+            ),
+
+            const Divider(height: 30),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (fee["status"] != "paid")
+                  ElevatedButton.icon(
+                    onPressed: () => _confirmMarkPaid(fee),
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text("Mark Paid"),
+                  ),
+
+                const SizedBox(width: 10),
+
+                OutlinedButton.icon(
+                  onPressed: () => _showFeeDialog(fee: fee),
+                  icon: const Icon(Icons.edit),
+                  label: const Text("Edit"),
+                ),
+
+                const SizedBox(width: 10),
+
+                OutlinedButton.icon(
+                  onPressed: () => _confirmDeleteFee(fee),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Delete"),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-    ); // cointainer
+    );
+  }
+
+  Widget _detailTile(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.indigo),
+        const SizedBox(width: 8),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _feeRow(Map<String, dynamic> fee) {
