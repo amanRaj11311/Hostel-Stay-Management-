@@ -276,27 +276,26 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
   Future<void> _saveRegistration(Map<String, dynamic>? registration) async {
     try {
       final body = {
-  "regId": regIdController.text.trim(),
-  "name": nameController.text.trim(),
-  "email": emailController.text.trim(),
-  "phone": phoneController.text.trim(),
-  "parentPhone": parentPhoneController.text.trim(),
-  "bloodGroup": bloodGroupController.text.trim(),
-  "rollNo": rollNoController.text.trim(),
-  "course": courseController.text.trim(),
-  "yearSem": yearSemController.text.trim(),
-  "college": collegeController.text.trim(),
-  "address": addressController.text.trim(),
-  "roomType": selectedRoomType,
-  "preferredBlock": selectedBlock,
-  "checkInDate":
-      (selectedCheckInDate ?? DateTime.now())
-          .toIso8601String(),
-  "duration": durationController.text.trim(),
-  "status": selectedStatus,
-  "documents": {},
-  "adminNote": adminNoteController.text.trim(),
-};
+        "regId": regIdController.text.trim(),
+        "name": nameController.text.trim(),
+        "email": emailController.text.trim(),
+        "phone": phoneController.text.trim(),
+        "parentPhone": parentPhoneController.text.trim(),
+        "bloodGroup": bloodGroupController.text.trim(),
+        "rollNo": rollNoController.text.trim(),
+        "course": courseController.text.trim(),
+        "yearSem": yearSemController.text.trim(),
+        "college": collegeController.text.trim(),
+        "address": addressController.text.trim(),
+        "roomType": selectedRoomType,
+        "preferredBlock": selectedBlock,
+        "checkInDate": (selectedCheckInDate ?? DateTime.now())
+            .toIso8601String(),
+        "duration": durationController.text.trim(),
+        "status": selectedStatus,
+        "documents": {},
+        "adminNote": adminNoteController.text.trim(),
+      };
 
       if (registration == null) {
         /// CREATE
@@ -405,9 +404,6 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-   
-
     return MainLayout(
       title: "Registration Requests",
       body: isLoading
@@ -422,7 +418,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                   children: [
                     /// Header
                     Wrap(
-                     alignment: WrapAlignment.spaceBetween,
+                      alignment: WrapAlignment.spaceBetween,
                       children: [
                         const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,6 +440,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                             ),
                           ],
                         ),
+                        Expanded(child:
 
                         ElevatedButton.icon(
                           onPressed: () {
@@ -462,7 +459,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                        ),
+                        ),)
                       ],
                     ),
 
@@ -484,103 +481,16 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                     ),
 
                     const SizedBox(height: 25),
-                    SingleChildScrollView(
-  scrollDirection: Axis.horizontal,
-  child: SizedBox(
-    width: 1300, // ya 1400
-    child:
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredRegistrations.length,
+                      itemBuilder: (context, index) {
+                        return _registrationCard(filteredRegistrations[index]);
+                      },
+                    ),
 
-                    Card(
-                      elevation: 5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Column(
-                        children: [
-                          /// Table Header
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(18),
-                                topRight: Radius.circular(18),
-                              ),
-                            ),
-                            child: const Row(
-                              children: [
-                                Expanded(
-                                  flex: 4,
-                                  child: Text(
-                                    "STUDENT",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    "COURSE",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    "ROOM TYPE",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    "STATUS",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    "ACTIONS",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: filteredRegistrations.length,
-                            separatorBuilder: (_, __) =>
-                                Divider(height: 1, color: Colors.grey.shade200),
-                            itemBuilder: (context, index) {
-                              final item = filteredRegistrations[index];
-
-                              return _registrationRow(item);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),)),
-
+                    
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -618,18 +528,34 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
     );
   }
 
-  Widget _registrationRow(Map<String, dynamic> registration) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      child: Row(
-        children: [
-          /// Student
-          Expanded(
-            flex: 4,
-            child: Row(
+  Widget _registrationCard(Map<String, dynamic> registration) {
+    Color statusColor;
+
+    switch ((registration["status"] ?? "").toLowerCase()) {
+      case "approved":
+        statusColor = Colors.green;
+        break;
+      case "rejected":
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = Colors.orange;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Student
+            Row(
               children: [
                 CircleAvatar(
-                  radius: 22,
+                  radius: 24,
                   backgroundColor: Colors.indigo.shade100,
                   child: Text(
                     (registration["name"] ?? "S")
@@ -651,95 +577,110 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                     children: [
                       Text(
                         registration["name"] ?? "-",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-
-                      Text(
-                        "Reg ID : ${registration["regId"] ?? "-"}",
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
-                      Text(
-                        registration["phone"] ?? "",
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Text("Reg ID : ${registration["regId"] ?? "-"}"),
+
+                      Text(registration["phone"] ?? "-"),
                     ],
+                  ),
+                ),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    registration["status"] ?? "-",
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
 
-          /// Course
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 18),
+
+            Row(
               children: [
-                Text(registration["course"] ?? "-"),
+                Expanded(
+                  child: _detailTile(
+                    Icons.school,
+                    "Course",
+                    registration["course"] ?? "-",
+                  ),
+                ),
 
-                Text(
-                  registration["college"] ?? "-",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                Expanded(
+                  child: _detailTile(
+                    Icons.account_balance,
+                    "College",
+                    registration["college"] ?? "-",
+                  ),
                 ),
               ],
             ),
-          ),
 
-          /// Room
-          Expanded(
-  flex: 3,
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(registration["roomType"] ?? "-"),
-      Text(
-        registration["preferredBlock"] ?? "-",
-        style: TextStyle(
-          color: Colors.grey.shade600,
-          fontSize: 12,
-        ),
-      ),
-    ],
-  ),
-),
+            const SizedBox(height: 12),
 
-          /// Status
-          Expanded(
-            flex: 2,
-            child: _statusChip(registration["status"] ?? "pending"),
-          ),
-
-          /// Actions
-          Expanded(
-            flex: 2,
-            child: Row(
+            Row(
               children: [
-                IconButton(
-                  tooltip: "Edit",
-                  icon: const Icon(Icons.edit, color: Colors.blue),
+                Expanded(
+                  child: _detailTile(
+                    Icons.hotel,
+                    "Room Type",
+                    registration["roomType"] ?? "-",
+                  ),
+                ),
+
+                Expanded(
+                  child: _detailTile(
+                    Icons.location_city,
+                    "Block",
+                    registration["preferredBlock"] ?? "-",
+                  ),
+                ),
+              ],
+            ),
+
+            const Divider(height: 30),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton.icon(
                   onPressed: () {
                     _showRegistrationDialog(registration: registration);
                   },
+                  icon: const Icon(Icons.edit),
+                  label: const Text("Edit"),
                 ),
 
-                IconButton(
-                  tooltip: "Delete",
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                const SizedBox(width: 10),
+
+                OutlinedButton.icon(
                   onPressed: () {
                     _deleteRegistration(registration["_id"]);
                   },
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Delete"),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -759,6 +700,28 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
           border: const OutlineInputBorder(),
         ),
       ),
+    );
+  }
+
+  Widget _detailTile(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.indigo, size: 18),
+
+        const SizedBox(width: 8),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
     );
   }
 }

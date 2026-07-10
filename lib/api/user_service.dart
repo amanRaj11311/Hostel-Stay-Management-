@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class UserService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
-
+  
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -18,7 +17,7 @@ class UserService {
   // Get All Users
   static Future getUsers() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/users"),
+      Uri.parse("${ApiConfig.baseUrl}/users"),
       headers: await getHeaders(),
     );
 
@@ -37,7 +36,7 @@ class UserService {
       Map<String, dynamic> body) async {
 
     final response = await http.post(
-      Uri.parse("$baseUrl/users"),
+      Uri.parse("${ApiConfig.baseUrl}/users"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -56,7 +55,7 @@ class UserService {
   // Get Single User
   static Future getUser(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/users/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/users/$id"),
       headers: await getHeaders(),
     );
 
@@ -76,7 +75,7 @@ class UserService {
       Map<String, dynamic> body) async {
 
     final response = await http.put(
-      Uri.parse("$baseUrl/users/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/users/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -94,7 +93,7 @@ class UserService {
   // Delete User
   static Future deleteUser(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/users/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/users/$id"),
       headers: await getHeaders(),
     );
 
@@ -114,7 +113,7 @@ class UserService {
       Map<String, dynamic> body) async {
 
     final response = await http.patch(
-      Uri.parse("$baseUrl/users/$id/reset-password"),
+      Uri.parse("${ApiConfig.baseUrl}/users/$id/reset-password"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );

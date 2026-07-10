@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class FeeService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+ 
 
   
   /// Headers
@@ -24,7 +24,7 @@ class FeeService {
   /// ============================
   static Future<dynamic> getFees() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/fees"),
+      Uri.parse("${ApiConfig.baseUrl}/fees"),
       headers: await getHeaders(),
     );
 
@@ -43,7 +43,7 @@ class FeeService {
   /// ============================
   static Future<dynamic> getFeeStats() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/fees/stats"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/stats"),
       headers: await getHeaders(),
     );
 
@@ -61,7 +61,7 @@ class FeeService {
   /// ============================
   static Future<dynamic> getOverdueFees() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/fees/overdue"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/overdue"),
       headers: await getHeaders(),
     );
 
@@ -79,7 +79,7 @@ class FeeService {
   /// ============================
   static Future<dynamic> getResidentFees(String residentId) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/fees/resident/$residentId"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/resident/$residentId"),
       headers: await getHeaders(),
     );
 
@@ -97,7 +97,7 @@ class FeeService {
   /// ============================
   static Future<dynamic> getFeeById(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/fees/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/$id"),
       headers: await getHeaders(),
     );
 
@@ -116,7 +116,7 @@ class FeeService {
   static Future<dynamic> createFee(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/fees"),
+      Uri.parse("${ApiConfig.baseUrl}/fees"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -139,7 +139,7 @@ class FeeService {
     Map<String, dynamic> body,
   ) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/fees/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -158,7 +158,7 @@ class FeeService {
   /// ============================
   static Future<dynamic> deleteFee(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/fees/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/$id"),
       headers: await getHeaders(),
     );
 
@@ -179,7 +179,7 @@ class FeeService {
     Map<String, dynamic> body,
   ) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/fees/$id/mark-paid"),
+      Uri.parse("${ApiConfig.baseUrl}/fees/$id/mark-paid"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );

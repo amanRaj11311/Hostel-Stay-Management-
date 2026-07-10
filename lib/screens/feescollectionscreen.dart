@@ -159,7 +159,7 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
-  }
+  } 
 
   void _confirmMarkPaid(Map<String, dynamic> fee) {
     showDialog(

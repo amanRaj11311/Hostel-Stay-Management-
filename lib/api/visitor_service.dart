@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class VisitorService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
-
+  
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -18,7 +17,7 @@ class VisitorService {
   // Today's Visitors
   static Future getTodayVisitors() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/visitors/today"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/today"),
       headers: await getHeaders(),
     );
 
@@ -35,7 +34,7 @@ class VisitorService {
   // Get All Visitors
   static Future getVisitors() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/visitors"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors"),
       headers: await getHeaders(),
     );
 
@@ -53,7 +52,7 @@ class VisitorService {
   static Future createVisitor(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/visitors"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -72,7 +71,7 @@ class VisitorService {
   // Get Single Visitor
   static Future getVisitor(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/visitors/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/$id"),
       headers: await getHeaders(),
     );
 
@@ -92,7 +91,7 @@ class VisitorService {
       Map<String, dynamic> body) async {
 
     final response = await http.put(
-      Uri.parse("$baseUrl/visitors/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -110,7 +109,7 @@ class VisitorService {
   // Delete Visitor
   static Future deleteVisitor(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/visitors/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/$id"),
       headers: await getHeaders(),
     );
 
@@ -127,7 +126,7 @@ class VisitorService {
   // Approve Visitor
   static Future approveVisitor(String id) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/visitors/$id/approve"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/$id/approve"),
       headers: await getHeaders(),
     );
 
@@ -147,7 +146,7 @@ class VisitorService {
       Map<String, dynamic> body) async {
 
     final response = await http.patch(
-      Uri.parse("$baseUrl/visitors/$id/reject"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/$id/reject"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -165,7 +164,7 @@ class VisitorService {
   // Check Out Visitor
   static Future checkoutVisitor(String id) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/visitors/$id/checkout"),
+      Uri.parse("${ApiConfig.baseUrl}/visitors/$id/checkout"),
       headers: await getHeaders(),
     );
 

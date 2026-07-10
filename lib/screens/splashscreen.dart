@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 30),
 
             const Text(
-              "NIA MediCare HMS",
+              "NIA Hostel HMS",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 30,
@@ -86,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 10),
 
             const Text(
-              "Patients • Doctors • Appointments • Billing • Pharmacy",
+              "Live Attendance • Rooms & inventory • Complaints & help •  Announcement",
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
@@ -107,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               child: const Text(
-                "Hospital Management App",
+                "Hostel Management App",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 8,
@@ -130,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 15),
 
             const Text(
-              "Powered by NIA Smart Healthcare ERP",
+              "Powered by NIA Smart Hostel ERP",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 8,

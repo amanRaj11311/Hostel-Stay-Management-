@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class AnnouncementService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -18,7 +18,7 @@ class AnnouncementService {
   // Get All Announcements
   static Future getAnnouncements() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/announcements"),
+      Uri.parse("${ApiConfig.baseUrl}/announcements"),
       headers: await getHeaders(),
     );
 
@@ -35,7 +35,7 @@ class AnnouncementService {
   // Get Announcement By ID
   static Future getAnnouncementById(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/announcements/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/announcements/$id"),
       headers: await getHeaders(),
     );
 
@@ -53,7 +53,7 @@ class AnnouncementService {
   static Future createAnnouncement(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/announcements"),
+      Uri.parse("${ApiConfig.baseUrl}/announcements"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -74,7 +74,7 @@ class AnnouncementService {
       String id,
       Map<String, dynamic> body) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/announcements/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/announcements/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -92,7 +92,7 @@ class AnnouncementService {
   // Delete Announcement
   static Future deleteAnnouncement(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/announcements/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/announcements/$id"),
       headers: await getHeaders(),
     );
 

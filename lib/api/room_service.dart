@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class RoomService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
-
+  
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -18,7 +17,7 @@ class RoomService {
   /// GET /rooms
   static Future<dynamic> getRooms() async {
   final response = await http.get(
-    Uri.parse("$baseUrl/rooms"),
+    Uri.parse("${ApiConfig.baseUrl}/rooms"),
     headers: await getHeaders(),
   );
 
@@ -37,7 +36,7 @@ class RoomService {
   /// GET /rooms/available
   static Future<dynamic> getAvailableRooms() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/rooms/available"),
+      Uri.parse("${ApiConfig.baseUrl}/rooms/available"),
       headers: await getHeaders(),
     );
 
@@ -51,7 +50,7 @@ class RoomService {
   /// GET /rooms/stats
   static Future<dynamic> getRoomStats() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/rooms/stats"),
+      Uri.parse("${ApiConfig.baseUrl}/rooms/stats"),
       headers: await getHeaders(),
     );
 
@@ -65,7 +64,7 @@ class RoomService {
   /// GET /rooms/{id}
   static Future<dynamic> getRoomById(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/rooms/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/rooms/$id"),
       headers: await getHeaders(),
     );
 
@@ -80,7 +79,7 @@ class RoomService {
   static Future<dynamic> createRoom(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/rooms"),
+      Uri.parse("${ApiConfig.baseUrl}/rooms"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -98,7 +97,7 @@ class RoomService {
       String id,
       Map<String, dynamic> body) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/rooms/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/rooms/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -113,7 +112,7 @@ class RoomService {
   /// DELETE /rooms/{id}
   static Future<dynamic> deleteRoom(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/rooms/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/rooms/$id"),
       headers: await getHeaders(),
     );
 

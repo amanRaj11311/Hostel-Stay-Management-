@@ -441,24 +441,25 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
       title: "User Management",
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          :  PullToRefresh(
-  onRefresh: loadData,
-  child:  SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  buildTopBar(),
+          : PullToRefresh(
+              onRefresh: loadData,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    buildTopBar(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  buildSearchSection(),
+                    buildSearchSection(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  buildUserList(),
-                ],
+                    buildUserList(),
+                  ],
+                ),
               ),
-            ),)
+            ),
     );
   }
 
@@ -485,6 +486,14 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
           onPressed: hasPermission("manage_users") ? showUserDialog : null,
           icon: const Icon(Icons.add),
           label: const Text("Create User"),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
         ),
       ],
     );
@@ -617,30 +626,28 @@ class _UsermanAgementScreenState extends State<UsermanAgementScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (hasPermission("manage_users"))
-                  IconButton(
-                    icon: const Icon(Icons.key, color: Colors.orange),
-                    onPressed: () {
-                      showResetPasswordDialog(item["_id"]);
-                    },
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.key, color: Colors.orange),
+                      onPressed: () {
+                        showResetPasswordDialog(item["_id"]);
+                      },
+                    ),
 
                   if (hasPermission("manage_users"))
-
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () {
-                      showEditDialog(item);
-                    },
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () {
+                        showEditDialog(item);
+                      },
+                    ),
 
                   if (hasPermission("manage_users"))
-
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      showDeleteDialog(item["_id"]);
-                    },
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        showDeleteDialog(item["_id"]);
+                      },
+                    ),
                 ],
               ),
             ],

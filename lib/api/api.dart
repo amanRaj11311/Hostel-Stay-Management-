@@ -1,16 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'api_config.dart';
 
 class ApiService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
-
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/auth/login"),
+      Uri.parse("${ApiConfig.baseUrl}/auth/login"),
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
