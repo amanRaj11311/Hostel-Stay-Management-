@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class DashboardService {
 
-  static const String baseUrl = "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   static Future<Map<String,String>> getHeaders() async {
 
@@ -20,7 +21,7 @@ class DashboardService {
   static Future getDashboardStats() async {
 
   final response = await http.get(
-    Uri.parse("$baseUrl/dashboard/stats"),
+    Uri.parse("${ApiConfig.baseUrl}/dashboard/stats"),
     headers: await getHeaders(),
   );
 
@@ -33,7 +34,7 @@ class DashboardService {
 static Future getRecentAttendance() async {
 
   final response = await http.get(
-    Uri.parse("$baseUrl/dashboard/recent-attendance"),
+    Uri.parse("${ApiConfig.baseUrl}/dashboard/recent-attendance"),
     headers: await getHeaders(),
   );
 
@@ -45,7 +46,7 @@ static Future getRecentAttendance() async {
 
 static Future getRecentVisitors() async {
   final response = await http.get(
-    Uri.parse("$baseUrl/dashboard/recent-visitors"),
+    Uri.parse("${ApiConfig.baseUrl}/dashboard/recent-visitors"),
     headers: await getHeaders(),
   );
 
@@ -56,7 +57,7 @@ static Future getRecentVisitors() async {
 }
 static Future getRecentAnnouncements() async {
   final response = await http.get(
-    Uri.parse("$baseUrl/dashboard/recent-announcements"),
+    Uri.parse("${ApiConfig.baseUrl}/dashboard/recent-announcements"),
     headers: await getHeaders(),
   );
 

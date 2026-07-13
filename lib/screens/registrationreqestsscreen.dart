@@ -60,11 +60,46 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
       yearSemController.text = registration["yearSem"] ?? "";
       collegeController.text = registration["college"] ?? "";
       addressController.text = registration["address"] ?? "";
-
       durationController.text = registration["duration"] ?? "";
       adminNoteController.text = registration["adminNote"] ?? "";
 
-      selectedStatus = registration["status"] ?? "pending";
+      // FIX: Normalize the status to lowercase and ensure it matches one of the allowed values
+      String status =
+          registration["status"]?.toString().toLowerCase() ?? "pending";
+      // Map to ensure it's one of the allowed values
+      if (status == "approved") {
+        selectedStatus = "approved";
+      } else if (status == "rejected") {
+        selectedStatus = "rejected";
+      } else {
+        selectedStatus = "pending";
+      }
+
+      // FIX: Ensure room type matches exactly
+      String roomType = registration["roomType"]?.toString() ?? "AC";
+      if (roomType == "Non AC" ||
+          roomType == "non ac" ||
+          roomType == "non-ac") {
+        selectedRoomType = "Non AC";
+      } else {
+        selectedRoomType = "AC";
+      }
+
+      // FIX: Ensure block matches exactly
+      String block =
+          registration["preferredBlock"]?.toString().toUpperCase() ?? "Block A";
+      if (block == "Block B") {
+        selectedBlock = "Block B";
+      } else if (block == "Block C") {
+        selectedBlock = "Block C";
+      } else {
+        selectedBlock = "Block A";
+      }
+
+      print(registration);
+      print("RoomType = $selectedRoomType");
+      print("Block = $selectedBlock");
+      print("Status = $selectedStatus");
 
       if (registration["checkInDate"] != null) {
         selectedCheckInDate = DateTime.parse(registration["checkInDate"]);
@@ -81,11 +116,12 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
       yearSemController.clear();
       collegeController.clear();
       addressController.clear();
-
       durationController.clear();
       adminNoteController.clear();
 
       selectedStatus = "pending";
+      selectedRoomType = "AC";
+      selectedBlock = "Block A";
       selectedCheckInDate = DateTime.now();
     }
 
@@ -215,13 +251,13 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                       const SizedBox(height: 15),
 
                       DropdownButtonFormField<String>(
-                        value: selectedStatus,
-
+                        value: selectedStatus.isNotEmpty
+                            ? selectedStatus
+                            : null, // Add this check
                         decoration: const InputDecoration(
                           labelText: "Status",
                           border: OutlineInputBorder(),
                         ),
-
                         items: const [
                           DropdownMenuItem(
                             value: "pending",
@@ -236,7 +272,6 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                             child: Text("Rejected"),
                           ),
                         ],
-
                         onChanged: (value) {
                           dialogSetState(() {
                             selectedStatus = value!;
@@ -417,6 +452,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// Header
+                    /// Header
                     Wrap(
                       alignment: WrapAlignment.spaceBetween,
                       children: [
@@ -440,9 +476,8 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                             ),
                           ],
                         ),
-                        Expanded(child:
-
                         ElevatedButton.icon(
+                          // <-- REMOVED Expanded
                           onPressed: () {
                             _showRegistrationDialog();
                           },
@@ -459,7 +494,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                        ),)
+                        ),
                       ],
                     ),
 
@@ -490,7 +525,6 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                       },
                     ),
 
-                    
                     const SizedBox(height: 100),
                   ],
                 ),

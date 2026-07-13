@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class AttendanceService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -18,7 +18,7 @@ class AttendanceService {
   /// GET /attendance
   static Future<dynamic> getAttendance() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/attendance"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance"),
       headers: await getHeaders(),
     );
 
@@ -32,7 +32,7 @@ class AttendanceService {
   /// GET /attendance/today
   static Future<dynamic> getTodayAttendance() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/attendance/today"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/today"),
       headers: await getHeaders(),
     );
 
@@ -46,7 +46,7 @@ class AttendanceService {
   /// GET /attendance/stats
   static Future<dynamic> getAttendanceStats() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/attendance/stats"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/stats"),
       headers: await getHeaders(),
     );
 
@@ -60,7 +60,7 @@ class AttendanceService {
   /// GET /attendance/resident/{id}
   static Future<dynamic> getAttendanceByResident(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/attendance/resident/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/resident/$id"),
       headers: await getHeaders(),
     );
 
@@ -74,7 +74,7 @@ class AttendanceService {
   /// POST /attendance/checkin
   static Future<dynamic> checkIn(Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/attendance/checkin"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/checkin"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -89,7 +89,7 @@ class AttendanceService {
   /// PATCH /attendance/{id}/checkout
   static Future<dynamic> checkOut(String id) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/attendance/$id/checkout"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/$id/checkout"),
       headers: await getHeaders(),
     );
 
@@ -106,7 +106,7 @@ class AttendanceService {
     Map<String, dynamic> body,
   ) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/attendance/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -121,7 +121,7 @@ class AttendanceService {
   /// DELETE /attendance/{id}
   static Future<dynamic> deleteAttendance(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/attendance/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/attendance/$id"),
       headers: await getHeaders(),
     );
 

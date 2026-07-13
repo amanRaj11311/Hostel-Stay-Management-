@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class ComplaintService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -18,7 +18,7 @@ class ComplaintService {
   // Get Complaint Stats
   static Future getComplaintStats() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/complaints/stats"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints/stats"),
       headers: await getHeaders(),
     );
 
@@ -35,7 +35,7 @@ class ComplaintService {
   // Get All Complaints
   static Future getComplaints() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/complaints"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints"),
       headers: await getHeaders(),
     );
 
@@ -53,7 +53,7 @@ class ComplaintService {
   static Future createComplaint(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/complaints"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -72,7 +72,7 @@ class ComplaintService {
   // Get Single Complaint
   static Future getComplaint(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/complaints/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints/$id"),
       headers: await getHeaders(),
     );
 
@@ -92,7 +92,7 @@ class ComplaintService {
       Map<String, dynamic> body) async {
 
     final response = await http.put(
-      Uri.parse("$baseUrl/complaints/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -110,7 +110,7 @@ class ComplaintService {
   // Delete Complaint
   static Future deleteComplaint(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/complaints/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints/$id"),
       headers: await getHeaders(),
     );
 
@@ -130,7 +130,7 @@ class ComplaintService {
       Map<String, dynamic> body) async {
 
     final response = await http.patch(
-      Uri.parse("$baseUrl/complaints/$id/status"),
+      Uri.parse("${ApiConfig.baseUrl}/complaints/$id/status"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );

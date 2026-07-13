@@ -38,7 +38,7 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
   String selectedSharing = "2 Sharing";
   bool attachedBathroom = true;
   bool wifiAvailable = true;
-  String roomStatus = "Available";
+  String roomStatus = "available";
 
   bool isLoading = true;
 
@@ -146,23 +146,22 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
 
                 DropdownButtonFormField<String>(
                   value: roomStatus,
-
+                  decoration: const InputDecoration(labelText: "Status"),
                   items: const [
                     DropdownMenuItem(
-                      value: "Available",
+                      value: "available",
                       child: Text("Available"),
                     ),
-
-                    DropdownMenuItem(value: "Full", child: Text("Full")),
-
+                    DropdownMenuItem(value: "full", child: Text("Full")),
                     DropdownMenuItem(
-                      value: "Maintenance",
+                      value: "maintenance",
                       child: Text("Maintenance"),
                     ),
                   ],
-
                   onChanged: (value) {
-                    roomStatus = value!;
+                    setState(() {
+                      roomStatus = value!;
+                    });
                   },
                 ),
               ],
@@ -394,10 +393,9 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
 
     notesController.clear();
 
-    
     wifiAvailable = false;
 
-    roomStatus = "Available";
+    roomStatus = "available";
 
     showDialog(
       context: context,
@@ -449,36 +447,36 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
                   decoration: const InputDecoration(labelText: "Rent"),
                 ),
                 DropdownButtonFormField<bool>(
-  value: attachedBathroom,
-  decoration: const InputDecoration(
-    labelText: "Attached Bathroom",
-  ),
-  items: const [
-    DropdownMenuItem(value: true, child: Text("Yes")),
-    DropdownMenuItem(value: false, child: Text("No")),
-  ],
-  onChanged: (value) {
-    setState(() {
-      attachedBathroom = value!;
-    });
-  },
-),
+                  value: attachedBathroom,
+                  decoration: const InputDecoration(
+                    labelText: "Attached Bathroom",
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: true, child: Text("Yes")),
+                    DropdownMenuItem(value: false, child: Text("No")),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      attachedBathroom = value!;
+                    });
+                  },
+                ),
 
                 DropdownButtonFormField<bool>(
-  value: wifiAvailable,
-  decoration: const InputDecoration(
-    labelText: "WiFi Available",
-  ),
-  items: const [
-    DropdownMenuItem(value: true, child: Text("Yes")),
-    DropdownMenuItem(value: false, child: Text("No")),
-  ],
-  onChanged: (value) {
-    setState(() {
-      wifiAvailable = value!;
-    });
-  },
-),
+                  value: wifiAvailable,
+                  decoration: const InputDecoration(
+                    labelText: "WiFi Available",
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: true, child: Text("Yes")),
+                    DropdownMenuItem(value: false, child: Text("No")),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      wifiAvailable = value!;
+                    });
+                  },
+                ),
 
                 TextField(
                   controller: bedsController,
@@ -509,14 +507,14 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
 
                   items: const [
                     DropdownMenuItem(
-                      value: "Available",
+                      value: "available",
                       child: Text("Available"),
                     ),
 
                     DropdownMenuItem(value: "Full", child: Text("Full")),
 
                     DropdownMenuItem(
-                      value: "Maintenance",
+                      value: "maintenance",
                       child: Text("Maintenance"),
                     ),
                   ],
@@ -590,10 +588,6 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
 
   @override
   Widget build(BuildContext context) {
-
-  
-
-
     return MainLayout(
       title: "Rooms & Inventory",
 
@@ -682,11 +676,9 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
                         children: [
                           _filterButton("All"),
 
-                          _filterButton("Available"),
-
-                          _filterButton("Full"),
-
-                          _filterButton("Maintenance"),
+                          _filterButton("available"),
+                          _filterButton("full"),
+                          _filterButton("maintenance"),
                         ],
                       ),
                     ),
@@ -929,10 +921,8 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
             ),
 
             const SizedBox(height: 18),
-             _buildInfoRow(Icons.location_city,   "Block", room["block"] ?? "-"),
-             
+            _buildInfoRow(Icons.location_city, "Block", room["block"] ?? "-"),
 
-            
             _buildInfoRow(Icons.hotel, "Room Type", room["roomType"] ?? "-"),
             _buildInfoRow(Icons.people, "Sharing", room["seating"] ?? "-"),
 
@@ -941,14 +931,8 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
               "Capacity",
               "${room["totalCapacity"] ?? 0} Beds",
             ),
-            
 
-            
-
-           
             _buildInfoRow(Icons.layers, "Floor", room["floor"] ?? "-"),
-            
-            
 
             _buildInfoRow(
               Icons.currency_rupee,
@@ -961,7 +945,6 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
               "Attached Bathroom",
               room["attachedBathroom"] == true ? "Yes" : "No",
             ),
-
 
             _buildInfoRow(
               Icons.wifi,

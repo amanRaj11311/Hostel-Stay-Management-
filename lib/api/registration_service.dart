@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class RegistrationService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -18,7 +18,7 @@ class RegistrationService {
   /// GET /registrations
   static Future<dynamic> getRegistrations() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/registrations"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations"),
       headers: await getHeaders(),
     );
 
@@ -35,7 +35,7 @@ class RegistrationService {
   /// GET /registrations/{id}
   static Future<dynamic> getRegistrationById(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/registrations/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations/$id"),
       headers: await getHeaders(),
     );
 
@@ -50,7 +50,7 @@ class RegistrationService {
   static Future<dynamic> createRegistration(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/registrations"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -68,7 +68,7 @@ class RegistrationService {
       String id,
       Map<String, dynamic> body) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/registrations/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -83,7 +83,7 @@ class RegistrationService {
   /// DELETE /registrations/{id}
   static Future<dynamic> deleteRegistration(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/registrations/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations/$id"),
       headers: await getHeaders(),
     );
 
@@ -97,7 +97,7 @@ class RegistrationService {
   /// PATCH /registrations/{id}/approve
   static Future<dynamic> approveRegistration(String id) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/registrations/$id/approve"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations/$id/approve"),
       headers: await getHeaders(),
     );
 
@@ -111,7 +111,7 @@ class RegistrationService {
   /// PATCH /registrations/{id}/reject
   static Future<dynamic> rejectRegistration(String id) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/registrations/$id/reject"),
+      Uri.parse("${ApiConfig.baseUrl}/registrations/$id/reject"),
       headers: await getHeaders(),
     );
 

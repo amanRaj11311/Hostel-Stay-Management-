@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class ResidentService {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   /// Headers
   static Future<Map<String, String>> getHeaders() async {
@@ -21,7 +21,7 @@ class ResidentService {
   /// ============================
   static Future<dynamic> getResidents() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/residents"),
+      Uri.parse("${ApiConfig.baseUrl}/residents"),
       headers: await getHeaders(),
     );
 
@@ -40,7 +40,7 @@ class ResidentService {
   /// ============================
   /// GET /residents/search
 static Future<dynamic> searchResidents(String q) async {
-  final uri = Uri.parse("$baseUrl/residents/search")
+  final uri = Uri.parse("${ApiConfig.baseUrl}/residents/search")
       .replace(queryParameters: {
     "q": q,
   });
@@ -68,7 +68,7 @@ static Future<dynamic> searchResidents(String q) async {
   /// ============================
   static Future<dynamic> getResidentById(String id) async {
     final response = await http.get(
-      Uri.parse("$baseUrl/residents/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/residents/$id"),
       headers: await getHeaders(),
     );
 
@@ -85,7 +85,7 @@ static Future<dynamic> searchResidents(String q) async {
   static Future<dynamic> createResident(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/residents"),
+      Uri.parse("${ApiConfig.baseUrl}/residents"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -108,7 +108,7 @@ static Future<dynamic> searchResidents(String q) async {
     Map<String, dynamic> body,
   ) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/residents/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/residents/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -127,7 +127,7 @@ static Future<dynamic> searchResidents(String q) async {
   /// ============================
   static Future<dynamic> deleteResident(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/residents/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/residents/$id"),
       headers: await getHeaders(),
     );
 
@@ -149,7 +149,7 @@ static Future<dynamic> searchResidents(String q) async {
     Map<String, dynamic> body,
   ) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/residents/$id/attendance"),
+      Uri.parse("${ApiConfig.baseUrl}/residents/$id/attendance"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -172,7 +172,7 @@ static Future<dynamic> searchResidents(String q) async {
     Map<String, dynamic> body,
   ) async {
     final response = await http.patch(
-      Uri.parse("$baseUrl/residents/$id/fee-status"),
+      Uri.parse("${ApiConfig.baseUrl}/residents/$id/fee-status"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );

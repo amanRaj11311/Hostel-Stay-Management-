@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class RoleService  {
-  static const String baseUrl =
-      "https://nia.hostelapi.dcstechnosis.com/api";
+  
 
   static Future<Map<String, String>> getHeaders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -18,7 +18,7 @@ class RoleService  {
   /// GET /roles
   static Future<dynamic> getRoles() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/roles"),
+      Uri.parse("${ApiConfig.baseUrl}/roles"),
       headers: await getHeaders(),
     );
 
@@ -36,7 +36,7 @@ class RoleService  {
   static Future<dynamic> createRole(
       Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/roles"),
+      Uri.parse("${ApiConfig.baseUrl}/roles"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -57,7 +57,7 @@ class RoleService  {
       String id,
       Map<String, dynamic> body) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/roles/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/roles/$id"),
       headers: await getHeaders(),
       body: jsonEncode(body),
     );
@@ -75,7 +75,7 @@ class RoleService  {
   /// DELETE /roles/{id}
   static Future<dynamic> deleteRole(String id) async {
     final response = await http.delete(
-      Uri.parse("$baseUrl/roles/$id"),
+      Uri.parse("${ApiConfig.baseUrl}/roles/$id"),
       headers: await getHeaders(),
     );
 
