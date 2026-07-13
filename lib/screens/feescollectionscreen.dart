@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/mainlayout.dart';
 import '../api/fee_service.dart';
+import '../api/resident_service.dart';
 import 'responsive.dart';
 import 'pull_to_refresh.dart';
 
@@ -14,113 +15,85 @@ class FeesCollectionScreen extends StatefulWidget {
 class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
   final TextEditingController searchController = TextEditingController();
 
-  final residentIdController = TextEditingController();
-  final studentNameController = TextEditingController();
-  final roomNoController = TextEditingController();
-  final monthController = TextEditingController();
-  final amountController = TextEditingController();
-  final paidAmountController = TextEditingController();
-  final receiptNoController = TextEditingController();
+  bool isLoading = true;
+  List<Map<String, dynamic>> fees = [];
+  List<Map<String, dynamic>> filteredFees = [];
+  List<Map<String, dynamic>> residents = [];
+  Map<String, dynamic> feeStats = {
+    "totalRecords": 0,
+    "totalCollected": 0,
+    "pendingDues": 0,
+    "paidRecords": 0,
+  };
 
-  String selectedStatus = "All";
-
-  String feeStatus = "paid";
-
-  String paymentMode = "cash";
-
-  DateTime? dueDate = DateTime.now();
-
-  DateTime? paidDate = DateTime.now();
-
-  bool isLoading = false;
-
-  List fees = [];
-
-  List filteredFees = [];
-  Map<String, dynamic> feeStats = {};
+  String selectedFilterStatus = "All";
 
   @override
   void initState() {
     super.initState();
-    loadFees();
+    _initData();
   }
 
-  Future<void> _saveFee(Map<String, dynamic>? fee) async {
+  Future<void> _initData() async {
+    setState(() => isLoading = true);
     try {
-      final body = {
-        "residentId": residentIdController.text.trim(),
-        "studentName": studentNameController.text.trim(),
-        "roomNo": roomNoController.text.trim(),
-        "month": monthController.text.trim(),
-        "amount": double.tryParse(amountController.text) ?? 0,
-        "paidAmount": double.tryParse(paidAmountController.text) ?? 0,
-        "dueDate": dueDate?.toIso8601String(),
-        "paidDate": paidDate?.toIso8601String(),
-        "status": feeStatus,
-        "paymentMode": paymentMode,
-        "receiptNo": receiptNoController.text.trim(),
-      };
+      await Future.wait([
+        loadFees(),
+        loadResidents(),
+      ]);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
-      if (fee == null) {
-        await FeeService.createFee(body);
+  Future<void> loadResidents() async {
+    try {
+      final response = await ResidentService.getResidents();
+      final data = response['data'];
+      
+      final loadedResidents = data is List
+          ? data
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList()
+          : <Map<String, dynamic>>[];
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Fee Record Created Successfully")),
-        );
-      } else {
-        await FeeService.updateFee(fee["_id"], body);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Fee Record Updated Successfully")),
-        );
+      if (mounted) {
+        setState(() {
+          residents = loadedResidents;
+        });
       }
-
-      await loadFees();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      debugPrint("Error loading residents: $e");
     }
   }
 
   Future<void> loadFees() async {
     try {
-      setState(() {
-        isLoading = true;
-      });
-
       final response = await FeeService.getFees();
-      print("Fees API => $response");
-
       final stats = await FeeService.getFeeStats();
-      print("Stats API => $stats");
-      print(response);
-      print(response["data"]);
-      print(response["data"][0]);
 
-      setState(() {
-        fees = response["data"] ?? [];
-        filteredFees = List.from(fees);
-        final statList = List<Map<String, dynamic>>.from(stats["data"] ?? []);
-
-        double totalCollected = 0;
-        double pendingDues = 0;
-        int paidRecords = 0;
-
-        for (var item in statList) {
-          if (item["_id"] == "paid") {
-            totalCollected = (item["collectedAmount"] ?? 0).toDouble();
-            paidRecords = fees.where((e) => e["status"] == "paid").length;
-          }
-
-          if (item["_id"] == "overdue") {
-            pendingDues = (item["totalAmount"] ?? 0).toDouble();
-          }
-        }
-
+      if (mounted) {
         setState(() {
-          fees = response["data"] ?? [];
-          filteredFees = List.from(fees);
+          final data = response["data"];
+          fees = data is List 
+              ? data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+              : [];
+          _applyFilters();
+          
+          final statList = List<Map<String, dynamic>>.from(stats["data"] ?? []);
+          double totalCollected = 0;
+          double pendingDues = 0;
+          int paidRecords = fees.where((e) => e["status"] == "paid").length;
+
+          for (var item in statList) {
+            if (item["_id"] == "paid") {
+              totalCollected = (item["collectedAmount"] ?? 0).toDouble();
+            }
+            if (item["_id"] == "overdue" || item["_id"] == "pending") {
+              pendingDues += (item["totalAmount"] ?? 0).toDouble();
+            }
+          }
 
           feeStats = {
             "totalRecords": fees.length,
@@ -128,796 +101,729 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
             "pendingDues": pendingDues,
             "paidRecords": paidRecords,
           };
-
-          isLoading = false;
         });
-
-        isLoading = false;
-      });
+      }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      debugPrint("Error loading fees: $e");
     }
+  }
+
+  void _applyFilters() {
+    final query = searchController.text.toLowerCase();
+    setState(() {
+      filteredFees = fees.where((fee) {
+        final name = (fee["studentName"] ?? "").toString().toLowerCase();
+        final room = (fee["roomNo"] ?? "").toString().toLowerCase();
+        final month = (fee["month"] ?? "").toString().toLowerCase();
+        final id = (fee["residentId"] is Map 
+            ? fee["residentId"]["residentId"] ?? "" 
+            : fee["residentId"] ?? "").toString().toLowerCase();
+        
+        bool matchSearch = name.contains(query) || room.contains(query) || month.contains(query) || id.contains(query);
+        bool matchStatus = selectedFilterStatus == "All" || fee["status"] == selectedFilterStatus.toLowerCase();
+        
+        return matchSearch && matchStatus;
+      }).toList();
+    });
   }
 
   Future<void> _markPaid(String id) async {
     try {
       await FeeService.markFeePaid(id, {});
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Fee Marked as Paid Successfully")),
-      );
-
-      loadFees();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Fee marked as paid successfully"), behavior: SnackBarBehavior.floating),
+        );
+        loadFees();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating));
     }
-  }
-
-  void _confirmMarkPaid(Map<String, dynamic> fee) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Mark Paid"),
-
-          content: Text("Mark fee of ${fee["studentName"]} as Paid?"),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(context);
-
-                await _markPaid(fee["_id"]);
-              },
-
-              child: const Text("Mark Paid"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showFeeDetails(Map<String, dynamic> fee) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            fee["studentName"] ?? "Fee Details",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: SizedBox(
-            width: 520,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _detail("Resident ID", fee["residentId"]),
-
-                  _detail("Student", fee["studentName"]),
-
-                  _detail("Room", fee["roomNo"]),
-
-                  _detail("Month", fee["month"]),
-
-                  _detail("Amount", "₹${fee["amount"]}"),
-
-                  _detail("Paid", "₹${fee["paidAmount"]}"),
-
-                  _detail("Status", fee["status"]),
-
-                  _detail("Payment Mode", fee["paymentMode"]),
-
-                  _detail("Receipt", fee["receiptNo"]),
-
-                  _detail("Due Date", fee["dueDate"]),
-
-                  _detail("Paid Date", fee["paidDate"]),
-                ],
-              ),
-            ),
-          ),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Close"),
-            ),
-
-            ElevatedButton.icon(
-              icon: const Icon(Icons.edit),
-              label: const Text("Edit"),
-              onPressed: () {
-                Navigator.pop(context);
-
-                _showFeeDialog(fee: fee);
-              },
-            ),
-            if (fee["status"] != "paid")
-              ElevatedButton.icon(
-                icon: const Icon(Icons.check_circle),
-                label: const Text("Mark Paid"),
-                onPressed: () {
-                  Navigator.pop(context);
-
-                  _confirmMarkPaid(fee);
-                },
-              ),
-
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.delete),
-              label: const Text("Delete"),
-              onPressed: () {
-                Navigator.pop(context);
-
-                _confirmDeleteFee(fee);
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _deleteFee(String id) async {
-    try {
-      await FeeService.deleteFee(id);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Fee Deleted Successfully")));
-
-      loadFees();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
-  void _confirmDeleteFee(Map<String, dynamic> fee) {
-    showDialog(
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Delete Fee"),
-
-          content: Text("Delete fee record of ${fee["studentName"]} ?"),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                Navigator.pop(context);
-
-                await _deleteFee(fee["_id"]);
-              },
-              child: const Text("Delete"),
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Delete Record"),
+        content: const Text("Are you sure you want to delete this fee record? This action cannot be undone."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
     );
-  }
 
-  void _showFeeDialog({Map<String, dynamic>? fee}) {
-    if (fee != null) {
-      residentIdController.text = fee["residentId"] ?? "";
-      studentNameController.text = fee["studentName"] ?? "";
-      roomNoController.text = fee["roomNo"] ?? "";
-      monthController.text = fee["month"] ?? "";
-      amountController.text = (fee["amount"] ?? "").toString();
-      paidAmountController.text = (fee["paidAmount"] ?? "").toString();
-      receiptNoController.text = fee["receiptNo"] ?? "";
-
-      const validStatus = ["paid", "pending", "partial", "overdue"];
-
-      feeStatus = validStatus.contains(fee["status"]) ? fee["status"] : "paid";
-
-      const validPaymentModes = ["cash", "upi", "bank"];
-
-      paymentMode = validPaymentModes.contains(fee["paymentMode"])
-          ? fee["paymentMode"]
-          : "cash";
-
-      print("Status from API = ${fee["status"]}");
-      print("feeStatus = $feeStatus");
-
-      print("paymentMode = $paymentMode");
-
-      dueDate = fee["dueDate"] == null
-          ? DateTime.now()
-          : DateTime.parse(fee["dueDate"]);
-
-      paidDate = fee["paidDate"] == null
-          ? DateTime.now()
-          : DateTime.parse(fee["paidDate"]);
-    } else {
-      residentIdController.clear();
-      studentNameController.clear();
-      roomNoController.clear();
-      monthController.clear();
-      amountController.clear();
-      paidAmountController.clear();
-      receiptNoController.clear();
-
-      feeStatus = "paid";
-      paymentMode = "cash";
-
-      dueDate = DateTime.now();
-      paidDate = DateTime.now();
+    if (confirm == true) {
+      try {
+        await FeeService.deleteFee(id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Record deleted"), behavior: SnackBarBehavior.floating));
+          loadFees();
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating));
+      }
     }
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, dialogSetState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-
-              title: Text(fee == null ? "Add Fee Record" : "Edit Fee Record"),
-
-              content: SizedBox(
-                width: 700,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _field(residentIdController, "Resident ID"),
-
-                      _field(studentNameController, "Student Name"),
-
-                      _field(roomNoController, "Room Number"),
-
-                      _field(monthController, "Month"),
-
-                      _field(
-                        amountController,
-                        "Total Amount",
-                        keyboardType: TextInputType.number,
-                      ),
-
-                      _field(
-                        paidAmountController,
-                        "Paid Amount",
-                        keyboardType: TextInputType.number,
-                      ),
-
-                      _field(receiptNoController, "Receipt Number"),
-
-                      const SizedBox(height: 15),
-
-                      DropdownButtonFormField<String>(
-                        value: feeStatus,
-                        decoration: const InputDecoration(
-                          labelText: "Status",
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: "paid", child: Text("Paid")),
-
-                          DropdownMenuItem(
-                            value: "pending",
-                            child: Text("Pending"),
-                          ),
-
-                          DropdownMenuItem(
-                            value: "partial",
-                            child: Text("Partial"),
-                          ),
-
-                          DropdownMenuItem(
-                            value: "overdue",
-                            child: Text("Overdue"),
-                          ),
-                        ],
-
-                        onChanged: (v) {
-                          dialogSetState(() {
-                            feeStatus = v!;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      DropdownButtonFormField<String>(
-                        value: paymentMode,
-                        decoration: const InputDecoration(
-                          labelText: "Payment Mode",
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: "cash", child: Text("Cash")),
-
-                          DropdownMenuItem(value: "upi", child: Text("UPI")),
-
-                          DropdownMenuItem(
-                            value: "bank",
-                            child: Text("Bank Transfer"),
-                          ),
-                        ],
-                        onChanged: (v) {
-                          dialogSetState(() {
-                            paymentMode = v!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Cancel"),
-                ),
-
-                ElevatedButton(
-                  onPressed: () async {
-                    await _saveFee(fee);
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(fee == null ? "Create" : "Update"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return MainLayout(
-      title: "Fee Management",
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : PullToRefresh(
-              onRefresh: loadFees,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    //_header(),
-                    const SizedBox(height: 0),
-
-                    _stats(),
-
-                    const SizedBox(height: 15),
-
-                    _searchCard(),
-
-                    const SizedBox(height: 15),
-
-                    _feeTable(),
-                  ],
+      title: "Fee Collection",
+      body: Container(
+        color: const Color(0xffF6F8FC),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : PullToRefresh(
+                onRefresh: loadFees,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(),
+                          const SizedBox(height: 24),
+                          _buildKpiCards(),
+                          const SizedBox(height: 24),
+                          _buildSearchAndFilter(),
+                          const SizedBox(height: 24),
+                          if (filteredFees.isEmpty)
+                            const _EmptyFeesState()
+                          else
+                            _buildFeesGrid(),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
-  /*Widget _header() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Fee Management",
-              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
-            ),
-
-            SizedBox(height: 6),
-
-            Text(
-              "Manage student dues, view collections, and process payments.",
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-
-        ElevatedButton.icon(
-          onPressed: () {
-            _showFeeDialog();
-          },
-          icon: const Icon(Icons.add),
-          label: const Text("Add Fee Record"),
-        ),
-      ],
-    );
-  }*/
-
-  Widget _stats() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // int crossAxisCount = constraints.maxWidth < 700 ? 2 : 4;
-        bool mobile = constraints.maxWidth < 700;
-
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: mobile ? 2 : 4,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: mobile ? 1.2 : 2.4,
-          children: [
-            _statCard(
-              "Total Records",
-              "${feeStats["totalRecords"] ?? 0}",
-              Icons.receipt_long,
-              Colors.blue,
-            ),
-
-            _statCard(
-              "Total Collected",
-              "₹${feeStats["totalCollected"] ?? 0}",
-              Icons.currency_rupee,
-              Colors.green,
-            ),
-
-            _statCard(
-              "Pending Dues",
-              "₹${feeStats["pendingDues"] ?? 0}",
-              Icons.warning_amber_rounded,
-              Colors.orange,
-            ),
-
-            _statCard(
-              "Paid Records",
-              "${feeStats["paidRecords"] ?? 0}",
-              Icons.check_circle,
-              Colors.teal,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  //_statCard
-  Widget _statCard(String title, String value, IconData icon, Color color) {
+  Widget _buildHeader() {
     return Container(
-      margin: const EdgeInsets.all(6),
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xff059669), Color(0xff10B981), Color(0xff34D399)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+            color: const Color(0xff10B981).withOpacity(.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Finance Management",
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Track student payments, manage monthly dues, and view collection summaries.",
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: () => _showFeeDialog(),
+            icon: const Icon(Icons.add_card_rounded),
+            label: const Text("New Payment"),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xff059669),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKpiCards() {
+    return LayoutBuilder(builder: (context, constraints) {
+      int count = constraints.maxWidth > 900 ? 4 : 2;
+      return GridView.count(
+        crossAxisCount: count,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: constraints.maxWidth > 900 ? 2.5 : 1.8,
+        children: [
+          _buildKpiCard("Total Collected", "₹${feeStats["totalCollected"]}", Icons.account_balance_wallet_rounded, const Color(0xff10B981)),
+          _buildKpiCard("Pending Dues", "₹${feeStats["pendingDues"]}", Icons.pending_actions_rounded, const Color(0xffEF4444)),
+          _buildKpiCard("Paid Records", "${feeStats["paidRecords"]}", Icons.check_circle_rounded, const Color(0xff2563EB)),
+          _buildKpiCard("Total Records", "${feeStats["totalRecords"]}", Icons.receipt_long_rounded, const Color(0xff6366F1)),
+        ],
+      );
+    });
+  }
+
+  Widget _buildKpiCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Adjusted padding
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value, 
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff111827)),
+                    maxLines: 1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title, 
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.w500), 
+                  maxLines: 1, 
+                  overflow: TextOverflow.ellipsis
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: LayoutBuilder(builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
+            children: [
+              _buildSearchField(),
+              const Divider(height: 24),
+              _buildFilterDropdown(),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(flex: 3, child: _buildSearchField()),
+            const SizedBox(width: 16),
+            Container(width: 1, height: 32, color: Colors.grey.shade200),
+            const SizedBox(width: 16),
+            Expanded(flex: 2, child: _buildFilterDropdown()),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: searchController,
+      onChanged: (v) => _applyFilters(),
+      decoration: InputDecoration(
+        hintText: "Search student, room, month or ID...",
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        prefixIcon: const Icon(Icons.search, color: Color(0xff10B981)),
+        border: InputBorder.none,
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown() {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: selectedFilterStatus,
+        isExpanded: true,
+        icon: const Icon(Icons.filter_list_rounded, color: Colors.grey),
+        items: const [
+          DropdownMenuItem(value: "All", child: Text("All Status")),
+          DropdownMenuItem(value: "paid", child: Text("Paid")),
+          DropdownMenuItem(value: "pending", child: Text("Pending")),
+          DropdownMenuItem(value: "partial", child: Text("Partial")),
+          DropdownMenuItem(value: "overdue", child: Text("Overdue")),
+        ],
+        onChanged: (value) {
+          setState(() {
+            selectedFilterStatus = value!;
+            _applyFilters();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildFeesGrid() {
+    return LayoutBuilder(builder: (context, constraints) {
+      final double cardWidth = 380;
+      final int crossAxisCount = (constraints.maxWidth / cardWidth).floor().clamp(1, 3);
+      
+      return Wrap(
+        spacing: 20,
+        runSpacing: 20,
+        children: filteredFees.map((fee) {
+          return SizedBox(
+            width: crossAxisCount == 1 ? constraints.maxWidth : (constraints.maxWidth - (crossAxisCount - 1) * 20) / crossAxisCount,
+            child: FeeCard(
+              fee: fee,
+              onMarkPaid: () => _markPaid(fee["_id"]),
+              onDelete: () => _deleteFee(fee["_id"]),
+              onEdit: () => _showFeeDialog(fee: fee),
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
+
+  void _showFeeDialog({Map<String, dynamic>? fee}) {
+    showDialog(
+      context: context,
+      builder: (context) => FeeFormDialog(
+        fee: fee,
+        residents: residents,
+        onSaved: loadFees,
+      ),
+    );
+  }
+}
+
+class FeeCard extends StatelessWidget {
+  final Map<String, dynamic> fee;
+  final VoidCallback onMarkPaid;
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
+
+  const FeeCard({
+    super.key,
+    required this.fee,
+    required this.onMarkPaid,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = (fee["status"] ?? "pending").toString().toLowerCase();
+    final Color statusColor = status == "paid"
+        ? const Color(0xff10B981)
+        : status == "partial"
+            ? const Color(0xffF59E0B)
+            : const Color(0xffEF4444);
+
+    final residentId = fee["residentId"] is Map 
+        ? fee["residentId"]["residentId"] ?? "-" 
+        : fee["residentId"]?.toString() ?? "-";
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(.04), blurRadius: 16, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: color.withOpacity(.12),
-            child: Icon(icon, color: color, size: 18),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            title,
-            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _searchCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: SizedBox(
-              width: context.w * 0.32,
-              child: TextField(
-                controller: searchController,
-                decoration: InputDecoration(
-                  hintText: "Search by name, ID, room no...",
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(context.w * 0.03),
-                  ),
+          Row(
+            children: [
+              _buildAvatar(fee["studentName"] ?? "?"),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(fee["studentName"] ?? "Unknown Student", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text("ID: $residentId", style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                  ],
                 ),
               ),
-            ),
+              _StatusBadge(status: status, color: statusColor),
+            ],
           ),
-
-          const SizedBox(width: 20),
-
-          SizedBox(
-            width: context.w * 0.32,
-            child: DropdownButtonFormField<String>(
-              value: selectedStatus,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(context.w * 0.03),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
-              items: const [
-                DropdownMenuItem(value: "All", child: Text("All")),
-                DropdownMenuItem(value: "paid", child: Text("Paid")),
-                DropdownMenuItem(value: "pending", child: Text("Pending")),
-                DropdownMenuItem(value: "partial", child: Text("Partial")),
-                DropdownMenuItem(value: "overdue", child: Text("Overdue")),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  selectedStatus = value!;
-                });
-              },
-            ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              _IconInfoItem(icon: Icons.meeting_room_rounded, label: "Room ${fee["roomNo"] ?? "-"}"),
+              const SizedBox(width: 12),
+              _IconInfoItem(icon: Icons.calendar_today_rounded, label: fee["month"] ?? "-"),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _feeTable() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: filteredFees.length,
-      itemBuilder: (context, index) {
-        return _feeCard(filteredFees[index]);
-      },
-    );
-  }
-
-  Widget _feeCard(Map<String, dynamic> fee) {
-    final Color statusColor = fee["status"] == "paid"
-        ? Colors.green
-        : fee["status"] == "partial"
-        ? Colors.orange
-        : Colors.red;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Student
-            Row(
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: const Color(0xffF9FAFB), borderRadius: BorderRadius.circular(16)),
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.indigo.shade100,
-                  child: Text(
-                    (fee["studentName"] ?? "S")
-                        .toString()
-                        .substring(0, 1)
-                        .toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.indigo,
-                      fontWeight: FontWeight.bold,
+                _buildDataRow("Total Amount", "₹${fee["amount"]}", isBoldValue: true),
+                const SizedBox(height: 8),
+                _buildDataRow("Paid Amount", "₹${fee["paidAmount"]}", valueColor: const Color(0xff10B981)),
+                const SizedBox(height: 8),
+                _buildDataRow("Due Date", _formatDate(fee["dueDate"])),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                "Mode: ${fee["paymentMode"]?.toString().toUpperCase() ?? "-"}",
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              if (status != "paid")
+                IconButton(
+                  onPressed: onMarkPaid,
+                  icon: const Icon(Icons.check_circle_rounded, color: Color(0xff10B981)),
+                  tooltip: "Mark as Paid",
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              const SizedBox(width: 12),
+              _buildActionMenu(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String name) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xff059669), Color(0xff34D399)]),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      alignment: Alignment.center,
+      child: Text(name.isNotEmpty ? name[0].toUpperCase() : "?", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+    );
+  }
+
+  Widget _buildDataRow(String label, String value, {bool isBoldValue = false, Color? valueColor}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+        Text(value, style: TextStyle(fontWeight: isBoldValue ? FontWeight.bold : FontWeight.w600, fontSize: 13, color: valueColor)),
+      ],
+    );
+  }
+
+  Widget _buildActionMenu() {
+    return PopupMenuButton<String>(
+      onSelected: (val) {
+        if (val == 'edit') onEdit();
+        if (val == 'delete') onDelete();
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18, color: Colors.blue), SizedBox(width: 10), Text("Edit")])),
+        const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: Colors.red), SizedBox(width: 10), Text("Delete", style: TextStyle(color: Colors.red))])),
+      ],
+      icon: Icon(Icons.more_horiz_rounded, color: Colors.grey.shade400),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+    );
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return "-";
+    try {
+      final d = DateTime.parse(date.toString());
+      return "${d.day}/${d.month}/${d.year}";
+    } catch (_) {
+      return date.toString().split("T").first;
+    }
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  final Color color;
+  const _StatusBadge({required this.status, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+      child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+}
+
+class _IconInfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _IconInfoItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey.shade400),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+}
+
+class FeeFormDialog extends StatefulWidget {
+  final Map<String, dynamic>? fee;
+  final List<Map<String, dynamic>> residents;
+  final VoidCallback onSaved;
+
+  const FeeFormDialog({super.key, this.fee, required this.residents, required this.onSaved});
+
+  @override
+  State<FeeFormDialog> createState() => _FeeFormDialogState();
+}
+
+class _FeeFormDialogState extends State<FeeFormDialog> {
+  final amountController = TextEditingController();
+  final paidAmountController = TextEditingController();
+  final receiptNoController = TextEditingController();
+  final monthController = TextEditingController();
+  
+  String? selectedResidentId;
+  String? selectedStudentName;
+  String? selectedRoomNo;
+  String status = "paid";
+  String paymentMode = "cash";
+  DateTime dueDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.fee != null) {
+      final res = widget.fee!["residentId"];
+      selectedResidentId = res is Map ? res["_id"]?.toString() : res?.toString();
+      selectedStudentName = widget.fee!["studentName"];
+      selectedRoomNo = widget.fee!["roomNo"];
+      amountController.text = (widget.fee!["amount"] ?? "").toString();
+      paidAmountController.text = (widget.fee!["paidAmount"] ?? "").toString();
+      receiptNoController.text = widget.fee!["receiptNo"] ?? "";
+      monthController.text = widget.fee!["month"] ?? "";
+      status = widget.fee!["status"] ?? "paid";
+      paymentMode = widget.fee!["paymentMode"] ?? "cash";
+      if (widget.fee!["dueDate"] != null) {
+        dueDate = DateTime.parse(widget.fee!["dueDate"]);
+      }
+    }
+  }
+
+  Future<void> _handleSave() async {
+    if (selectedResidentId == null || amountController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Resident and Amount are required"), behavior: SnackBarBehavior.floating));
+      return;
+    }
+
+    final body = {
+      "residentId": selectedResidentId,
+      "studentName": selectedStudentName,
+      "roomNo": selectedRoomNo,
+      "amount": double.tryParse(amountController.text) ?? 0,
+      "paidAmount": double.tryParse(paidAmountController.text) ?? 0,
+      "receiptNo": receiptNoController.text.trim(),
+      "month": monthController.text.trim(),
+      "status": status,
+      "paymentMode": paymentMode,
+      "dueDate": dueDate.toIso8601String(),
+    };
+
+    try {
+      if (widget.fee == null) {
+        await FeeService.createFee(body);
+      } else {
+        await FeeService.updateFee(widget.fee!["_id"], body);
+      }
+      widget.onSaved();
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      debugPrint("Error saving fee: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isEditing = widget.fee != null;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Row(
+                children: [
+                  Icon(isEditing ? Icons.edit_calendar_rounded : Icons.add_card_rounded, color: const Color(0xff059669), size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      isEditing ? "Edit Fee Record" : "Collect New Fee", 
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fee["studentName"] ?? "-",
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close), style: IconButton.styleFrom(backgroundColor: Colors.grey.shade100)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel("Resident *"),
+                    DropdownButtonFormField<String>(
+                      value: selectedResidentId,
+                      isExpanded: true,
+                      hint: const Text("Select Resident"),
+                      decoration: _buildInputDecoration("Search resident..."),
+                      items: widget.residents.isEmpty 
+                        ? []
+                        : widget.residents.map<DropdownMenuItem<String>>((r) {
+                            final String name = r["name"]?.toString() ?? "Unknown";
+                            final String regId = r["residentId"]?.toString() ?? "-";
+                            final String id = r["_id"]?.toString() ?? "";
+                            return DropdownMenuItem<String>(
+                              value: id,
+                              child: Text("$name ($regId)"),
+                            );
+                          }).toList(),
+                      onChanged: (val) {
+                        final res = widget.residents.firstWhere((element) => element["_id"].toString() == val);
+                        setState(() {
+                          selectedResidentId = val;
+                          selectedStudentName = res["name"];
+                          selectedRoomNo = res["roomNo"];
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField("Amount *", amountController, "0.00", keyboardType: TextInputType.number)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildTextField("Paid Amount", paidAmountController, "0.00", keyboardType: TextInputType.number)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField("Billing Month", monthController, "e.g. Oct 2023")),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildTextField("Receipt No", receiptNoController, "REC-001")),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDropdownField("Status", status, ["paid", "pending", "partial", "overdue"], (val) => setState(() => status = val!))),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildDropdownField("Payment Mode", paymentMode, ["cash", "upi", "bank"], (val) => setState(() => paymentMode = val!))),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _buildLabel("Due Date"),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(context: context, initialDate: dueDate, firstDate: DateTime(2020), lastDate: DateTime(2030));
+                        if (date != null) setState(() => dueDate = date);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("${dueDate.day}/${dueDate.month}/${dueDate.year}"),
+                            const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xff059669)),
+                          ],
                         ),
                       ),
-
-                      Text(
-                        "Resident ID : ${fee["residentId"] is Map ? fee["residentId"]["residentId"] ?? "-" : fee["residentId"] ?? "-"}",
-                      ),
-                    ],
-                  ),
-                ),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    fee["status"] ?? "",
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-
-            const SizedBox(height: 18),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _detailTile(
-                    Icons.meeting_room,
-                    "Room",
-                    fee["roomNo"] ?? "-",
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff059669),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(isEditing ? "Update Record" : "Collect Payment"),
                   ),
-                ),
-
-                Expanded(
-                  child: _detailTile(
-                    Icons.calendar_month,
-                    "Month",
-                    fee["month"] ?? "-",
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _detailTile(
-                    Icons.currency_rupee,
-                    "Amount",
-                    "₹${fee["amount"]}",
-                  ),
-                ),
-
-                Expanded(
-                  child: _detailTile(
-                    Icons.payments,
-                    "Paid",
-                    "₹${fee["paidAmount"]}",
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _detailTile(
-                    Icons.event,
-                    "Due Date",
-                    fee["dueDate"] == null
-                        ? "-"
-                        : fee["dueDate"].toString().split("T").first,
-                  ),
-                ),
-
-                Expanded(
-                  child: _detailTile(
-                    Icons.receipt,
-                    "Receipt",
-                    fee["receiptNo"] ?? "-",
-                  ),
-                ),
-              ],
-            ),
-
-            const Divider(height: 30),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (fee["status"] != "paid")
-                  ElevatedButton.icon(
-                    onPressed: () => _confirmMarkPaid(fee),
-                    icon: const Icon(Icons.check_circle),
-                    label: const Text("Mark Paid"),
-                  ),
-
-                const SizedBox(width: 10),
-
-                OutlinedButton.icon(
-                  onPressed: () => _showFeeDialog(fee: fee),
-                  icon: const Icon(Icons.edit),
-                  label: const Text("Edit"),
-                ),
-
-                const SizedBox(width: 10),
-
-                OutlinedButton.icon(
-                  onPressed: () => _confirmDeleteFee(fee),
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                  icon: const Icon(Icons.delete),
-                  label: const Text("Delete"),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -925,203 +831,68 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
     );
   }
 
-  Widget _detailTile(IconData icon, String title, String value) {
-    return Row(
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 4),
+      child: Text(text, style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade800, fontSize: 14)),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, String hint, {TextInputType keyboardType = TextInputType.text}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: Colors.indigo),
-        const SizedBox(width: 8),
+        _buildLabel(label),
+        TextField(controller: controller, keyboardType: keyboardType, decoration: _buildInputDecoration(hint)),
+      ],
+    );
+  }
 
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ],
+  Widget _buildDropdownField(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        DropdownButtonFormField<String>(
+          value: value,
+          isExpanded: true,
+          decoration: _buildInputDecoration(""),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e[0].toUpperCase() + e.substring(1), style: const TextStyle(fontSize: 14)))).toList(),
+          onChanged: onChanged,
         ),
       ],
     );
   }
 
-  Widget _feeRow(Map<String, dynamic> fee) {
-    print(fee);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      child: Row(
-        children: [
-          /// Student
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 23,
-                  backgroundColor: Colors.indigo.shade100,
-                  child: Text(
-                    (fee["studentName"] ?? "S")
-                        .toString()
-                        .substring(0, 1)
-                        .toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.indigo,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 14),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fee["studentName"] ?? "-",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-                        fee["residentId"] is Map
-                            ? fee["residentId"]["residentId"] ?? "-"
-                            : fee["residentId"]?.toString() ?? "-",
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          /// Room
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fee["course"] is Map
-                      ? fee["course"]["name"] ?? "-"
-                      : fee["course"]?.toString() ?? "-",
-                ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  fee["roomNo"] ?? "-",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-
-          /// Month
-          Expanded(flex: 2, child: Text(fee["month"] ?? "-")),
-
-          /// Amount
-          Expanded(
-            flex: 3,
-            child: Text(
-              "₹${fee["paidAmount"]} / ₹${fee["amount"]}",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          /// Due Date
-          Expanded(
-            flex: 2,
-            child: Text(
-              fee["dueDate"] == null
-                  ? "-"
-                  : fee["dueDate"].toString().split("T").first,
-            ),
-          ),
-
-          /// Status
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: fee["status"] == "paid"
-                    ? Colors.green.withOpacity(.15)
-                    : fee["status"] == "partial"
-                    ? Colors.orange.withOpacity(.15)
-                    : Colors.red.withOpacity(.15),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Center(
-                child: Text(
-                  fee["status"] ?? "-",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: fee["status"] == "paid"
-                        ? Colors.green
-                        : fee["status"] == "partial"
-                        ? Colors.orange
-                        : Colors.red,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          /// Action
-          Expanded(
-            child: IconButton(
-              onPressed: () {
-                _showFeeDetails(fee);
-              },
-              icon: const Icon(
-                Icons.chevron_right,
-                size: 28,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-        ],
-      ),
+  InputDecoration _buildInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xff059669), width: 1.5)),
     );
   }
+}
 
-  Widget _detail(String title, dynamic value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          Expanded(child: Text(value?.toString() ?? "-")),
-        ],
-      ),
-    );
-  }
-
-  Widget _field(
-    TextEditingController controller,
-    String label, {
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+class _EmptyFeesState extends StatelessWidget {
+  const _EmptyFeesState();
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.grey.shade300),
+            const SizedBox(height: 20),
+            const Text("No Fee Records Found", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text("Try changing your search or status filter to find records.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade500)),
+          ],
         ),
       ),
     );

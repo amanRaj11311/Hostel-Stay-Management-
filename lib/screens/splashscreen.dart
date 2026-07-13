@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 30),
 
             const Text(
-              "NIA Hostel HMS",
+              "NIA HMS",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 30,

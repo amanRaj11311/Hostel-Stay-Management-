@@ -14,42 +14,34 @@ class RoomsAndInventoryscreen extends StatefulWidget {
 
 class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
   final TextEditingController roomNumberController = TextEditingController();
-
   final TextEditingController roomTypeController = TextEditingController();
-
   final TextEditingController sharingController = TextEditingController();
-
   final TextEditingController rentController = TextEditingController();
-
   final TextEditingController capacityController = TextEditingController();
-
   final TextEditingController floorController = TextEditingController();
   final TextEditingController occupiedController = TextEditingController();
-
   final TextEditingController bedsController = TextEditingController();
   final TextEditingController fansController = TextEditingController();
   final TextEditingController cupboardController = TextEditingController();
   final TextEditingController studyTableController = TextEditingController();
-
   final TextEditingController notesController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   String selectedBlock = "A";
-  String selectedRoomType = "AC";
-  String selectedSharing = "2 Sharing";
   bool attachedBathroom = true;
   bool wifiAvailable = true;
   String roomStatus = "available";
-
+  String selectedFilter = "All";
   bool isLoading = true;
 
   List rooms = [];
   List filteredRooms = [];
-
-  Map<String, dynamic> stats = {};
-
-  String selectedFilter = "All";
-
-  final TextEditingController searchController = TextEditingController();
+  Map<String, dynamic> stats = {
+    "vacantRooms": 0,
+    "occupiedRooms": 0,
+    "totalRooms": 0,
+    "totalBeds": 0,
+  };
 
   @override
   void initState() {
@@ -60,529 +52,234 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
   @override
   void dispose() {
     searchController.dispose();
-
     roomNumberController.dispose();
     roomTypeController.dispose();
     sharingController.dispose();
     rentController.dispose();
     capacityController.dispose();
-
     floorController.dispose();
     occupiedController.dispose();
-
     bedsController.dispose();
     fansController.dispose();
     cupboardController.dispose();
     studyTableController.dispose();
-
+    notesController.dispose();
     super.dispose();
-  }
-
-  void _showEditRoomDialog(Map room) {
-    roomNumberController.text = room["roomNo"]?.toString() ?? "";
-
-    roomTypeController.text = room["roomType"]?.toString() ?? "";
-
-    sharingController.text = room["seating"]?.toString() ?? "";
-
-    capacityController.text = room["totalCapacity"]?.toString() ?? "";
-
-    rentController.text = room["monthlyRent"]?.toString() ?? "";
-
-    roomStatus = room["status"]?.toString() ?? "Available";
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Room"),
-
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-
-              children: [
-                TextField(
-                  controller: roomNumberController,
-                  decoration: const InputDecoration(labelText: "Room Number"),
-                ),
-
-                TextField(
-                  controller: roomTypeController,
-                  decoration: const InputDecoration(labelText: "Room Type"),
-                ),
-
-                TextField(
-                  controller: sharingController,
-                  decoration: const InputDecoration(labelText: "Sharing"),
-                ),
-
-                TextField(
-                  controller: capacityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Capacity"),
-                ),
-                DropdownButtonFormField<String>(
-                  value: selectedBlock,
-                  decoration: const InputDecoration(labelText: "Hostel Block"),
-                  items: const [
-                    DropdownMenuItem(value: "A", child: Text("Block A")),
-                    DropdownMenuItem(value: "B", child: Text("Block B")),
-                    DropdownMenuItem(value: "C", child: Text("Block C")),
-                    DropdownMenuItem(value: "D", child: Text("Block D")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedBlock = value!;
-                    });
-                  },
-                ),
-
-                TextField(
-                  controller: rentController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Rent"),
-                ),
-
-                DropdownButtonFormField<String>(
-                  value: roomStatus,
-                  decoration: const InputDecoration(labelText: "Status"),
-                  items: const [
-                    DropdownMenuItem(
-                      value: "available",
-                      child: Text("Available"),
-                    ),
-                    DropdownMenuItem(value: "full", child: Text("Full")),
-                    DropdownMenuItem(
-                      value: "maintenance",
-                      child: Text("Maintenance"),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      roomStatus = value!;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-
-            ElevatedButton(
-              onPressed: () {
-                _updateRoom(room["_id"].toString());
-              },
-
-              child: const Text("Update"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _updateRoom(String id) async {
-    try {
-      final body = {
-        "roomNo": roomNumberController.text,
-
-        "roomType": roomTypeController.text,
-
-        "seating": sharingController.text,
-
-        "totalCapacity": int.tryParse(capacityController.text) ?? 0,
-
-        "monthlyRent": double.tryParse(rentController.text) ?? 0,
-
-        "status": roomStatus,
-      };
-
-      await RoomService.updateRoom(id, body);
-
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Room Updated Successfully")),
-      );
-
-      loadData();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
-  Future<void> _deleteRoom(Map room) async {
-    bool? confirm = await showDialog(
-      context: context,
-
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Delete Room"),
-
-          content: Text("Delete Room ${room["roomNo"]} ?"),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
-
-              child: const Text("Cancel"),
-            ),
-
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-
-              child: const Text("Delete"),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm != true) return;
-
-    try {
-      await RoomService.deleteRoom(room["_id"].toString());
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Room Deleted")));
-
-      loadData();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
   }
 
   Future<void> loadData() async {
     try {
-      setState(() {
-        isLoading = true;
-      });
+      setState(() => isLoading = rooms.isEmpty);
 
       final roomRes = await RoomService.getRooms();
       final statsRes = await RoomService.getRoomStats();
 
-      print("ROOM RESPONSE: $roomRes");
-      print("ROOM DATA: ${roomRes["data"]}");
+      if (mounted) {
+        setState(() {
+          rooms = roomRes["data"] ?? [];
+          applyFilters();
 
-      print("STATS RESPONSE: $statsRes");
-      print("STATS DATA: ${statsRes["data"]}");
+          List statsList = statsRes["data"] ?? [];
+          int available = 0;
+          int occupied = 0;
 
-      rooms = roomRes["data"] ?? [];
-      filteredRooms = List.from(rooms);
+          for (var item in statsList) {
+            if (item["_id"] == "available") available = item["count"] ?? 0;
+            if (item["_id"] == "occupied") occupied = item["count"] ?? 0;
+          }
 
-      List statsList = statsRes["data"] ?? [];
-
-      int available = 0;
-      int occupied = 0;
-
-      for (var item in statsList) {
-        if (item["_id"] == "available") {
-          available = item["count"] ?? 0;
-        }
-
-        if (item["_id"] == "occupied") {
-          occupied = item["count"] ?? 0;
-        }
+          stats = {
+            "vacantRooms": available,
+            "occupiedRooms": occupied,
+            "totalRooms": available + occupied,
+            "totalBeds": rooms.fold<int>(0, (sum, r) => sum + ((r["totalCapacity"] ?? 0) as num).toInt()),
+          };
+          isLoading = false;
+        });
       }
-
-      stats = {
-        "vacantRooms": available,
-        "occupiedRooms": occupied,
-        "totalRooms": available + occupied,
-        "totalBeds": rooms.fold<int>(
-          0,
-          (sum, r) => sum + ((r["totalCapacity"] ?? 0) as num).toInt(),
-        ),
-      };
-
-      setState(() {
-        isLoading = false;
-      });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) setState(() => isLoading = false);
+      debugPrint("Error loading data: $e");
     }
   }
 
-  void searchRoom(String value) {
-    List temp = List.from(rooms);
-
-    if (selectedFilter != "All") {
-      temp = temp.where((room) {
-        return (room["status"] ?? "").toString().toLowerCase() ==
-            selectedFilter.toLowerCase();
-      }).toList();
-    }
-
-    if (value.isNotEmpty) {
-      temp = temp.where((room) {
-        return (room["roomNo"] ?? "").toString().toLowerCase().contains(
-          value.toLowerCase(),
-        );
-      }).toList();
-    }
-
+  void applyFilters() {
     setState(() {
-      filteredRooms = temp;
-    });
-  }
-
-  void filterRooms(String filter) {
-    selectedFilter = filter;
-
-    List temp = List.from(rooms);
-
-    if (filter != "All") {
-      temp = temp.where((room) {
-        return (room["status"] ?? "").toString().toLowerCase() ==
-            filter.toLowerCase();
+      filteredRooms = rooms.where((room) {
+        final query = searchController.text.toLowerCase();
+        final roomNo = (room["roomNo"] ?? "").toString().toLowerCase();
+        final matchSearch = roomNo.contains(query);
+        final matchFilter = selectedFilter == "All" || (room["status"] ?? "").toString().toLowerCase() == selectedFilter.toLowerCase();
+        return matchSearch && matchFilter;
       }).toList();
-    }
-
-    if (searchController.text.isNotEmpty) {
-      temp = temp.where((room) {
-        return (room["roomNo"] ?? "").toString().toLowerCase().contains(
-          searchController.text.toLowerCase(),
-        );
-      }).toList();
-    }
-
-    setState(() {
-      filteredRooms = temp;
     });
   }
 
   void _showAddRoomDialog() {
+    _resetControllers();
+    showDialog(
+      context: context,
+      builder: (context) => RoomFormDialog(
+        title: "Add New Room",
+        onSave: _createRoom,
+        roomNumberController: roomNumberController,
+        floorController: floorController,
+        occupiedController: occupiedController,
+        roomTypeController: roomTypeController,
+        sharingController: sharingController,
+        capacityController: capacityController,
+        rentController: rentController,
+        bedsController: bedsController,
+        fansController: fansController,
+        cupboardController: cupboardController,
+        studyTableController: studyTableController,
+        selectedBlock: selectedBlock,
+        attachedBathroom: attachedBathroom,
+        wifiAvailable: wifiAvailable,
+        roomStatus: roomStatus,
+        onBlockChanged: (val) => selectedBlock = val!,
+        onBathroomChanged: (val) => attachedBathroom = val!,
+        onWifiChanged: (val) => wifiAvailable = val!,
+        onStatusChanged: (val) => roomStatus = val!,
+      ),
+    );
+  }
+
+  void _showEditRoomDialog(Map room) {
+    roomNumberController.text = room["roomNo"]?.toString() ?? "";
+    roomTypeController.text = room["roomType"]?.toString() ?? "";
+    sharingController.text = room["seating"]?.toString() ?? "";
+    capacityController.text = room["totalCapacity"]?.toString() ?? "";
+    rentController.text = room["monthlyRent"]?.toString() ?? "";
+    floorController.text = room["floor"]?.toString() ?? "";
+    occupiedController.text = room["occupied"]?.toString() ?? "0";
+    bedsController.text = room["amenities"]?["beds"]?.toString() ?? "0";
+    fansController.text = room["amenities"]?["fans"]?.toString() ?? "0";
+    cupboardController.text = room["amenities"]?["cupboards"]?.toString() ?? "0";
+    studyTableController.text = room["amenities"]?["tables"]?.toString() ?? "0";
+    selectedBlock = room["block"] ?? "A";
+    attachedBathroom = room["attachedBathroom"] == true;
+    wifiAvailable = room["wifi"] == true;
+    roomStatus = room["status"] ?? "available";
+
+    showDialog(
+      context: context,
+      builder: (context) => RoomFormDialog(
+        title: "Edit Room",
+        onSave: () => _updateRoom(room["_id"].toString()),
+        roomNumberController: roomNumberController,
+        floorController: floorController,
+        occupiedController: occupiedController,
+        roomTypeController: roomTypeController,
+        sharingController: sharingController,
+        capacityController: capacityController,
+        rentController: rentController,
+        bedsController: bedsController,
+        fansController: fansController,
+        cupboardController: cupboardController,
+        studyTableController: studyTableController,
+        selectedBlock: selectedBlock,
+        attachedBathroom: attachedBathroom,
+        wifiAvailable: wifiAvailable,
+        roomStatus: roomStatus,
+        onBlockChanged: (val) => selectedBlock = val!,
+        onBathroomChanged: (val) => attachedBathroom = val!,
+        onWifiChanged: (val) => wifiAvailable = val!,
+        onStatusChanged: (val) => roomStatus = val!,
+      ),
+    );
+  }
+
+  void _resetControllers() {
     roomNumberController.clear();
     roomTypeController.clear();
     sharingController.clear();
     rentController.clear();
     capacityController.clear();
-
     floorController.clear();
     occupiedController.clear();
-
     bedsController.clear();
     fansController.clear();
     cupboardController.clear();
     studyTableController.clear();
-
-    notesController.clear();
-
-    wifiAvailable = false;
-
+    selectedBlock = "A";
+    attachedBathroom = true;
+    wifiAvailable = true;
     roomStatus = "available";
-
-    showDialog(
-      context: context,
-
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Add Room"),
-
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-
-              children: [
-                TextField(
-                  controller: roomNumberController,
-                  decoration: const InputDecoration(labelText: "Room Number"),
-                ),
-
-                TextField(
-                  controller: floorController,
-                  decoration: const InputDecoration(labelText: "Floor"),
-                ),
-
-                TextField(
-                  controller: occupiedController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Occupied Beds"),
-                ),
-
-                TextField(
-                  controller: roomTypeController,
-                  decoration: const InputDecoration(labelText: "Room Type"),
-                ),
-
-                TextField(
-                  controller: sharingController,
-                  decoration: const InputDecoration(labelText: "Sharing"),
-                ),
-
-                TextField(
-                  controller: capacityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Capacity"),
-                ),
-
-                TextField(
-                  controller: rentController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Rent"),
-                ),
-                DropdownButtonFormField<bool>(
-                  value: attachedBathroom,
-                  decoration: const InputDecoration(
-                    labelText: "Attached Bathroom",
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: true, child: Text("Yes")),
-                    DropdownMenuItem(value: false, child: Text("No")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      attachedBathroom = value!;
-                    });
-                  },
-                ),
-
-                DropdownButtonFormField<bool>(
-                  value: wifiAvailable,
-                  decoration: const InputDecoration(
-                    labelText: "WiFi Available",
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: true, child: Text("Yes")),
-                    DropdownMenuItem(value: false, child: Text("No")),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      wifiAvailable = value!;
-                    });
-                  },
-                ),
-
-                TextField(
-                  controller: bedsController,
-                  decoration: const InputDecoration(labelText: "No. of Beds"),
-                ),
-
-                TextField(
-                  controller: fansController,
-                  decoration: const InputDecoration(labelText: "No. of Fans"),
-                ),
-
-                TextField(
-                  controller: cupboardController,
-                  decoration: const InputDecoration(labelText: "Cupboards"),
-                ),
-
-                TextField(
-                  controller: studyTableController,
-                  decoration: const InputDecoration(labelText: "Study Tables"),
-                ),
-
-                const SizedBox(height: 15),
-
-                DropdownButtonFormField<String>(
-                  value: roomStatus,
-
-                  decoration: const InputDecoration(labelText: "Status"),
-
-                  items: const [
-                    DropdownMenuItem(
-                      value: "available",
-                      child: Text("Available"),
-                    ),
-
-                    DropdownMenuItem(value: "Full", child: Text("Full")),
-
-                    DropdownMenuItem(
-                      value: "maintenance",
-                      child: Text("Maintenance"),
-                    ),
-                  ],
-
-                  onChanged: (value) {
-                    roomStatus = value!;
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-
-              child: const Text("Cancel"),
-            ),
-
-            ElevatedButton(onPressed: _createRoom, child: const Text("Create")),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _createRoom() async {
     try {
-      final body = {
-        "roomNo": roomNumberController.text,
-
-        "floor": floorController.text,
-
-        "roomType": roomTypeController.text,
-
-        "seating": sharingController.text,
-
-        "totalCapacity": int.tryParse(capacityController.text) ?? 0,
-        "occupied": int.tryParse(occupiedController.text) ?? 0,
-
-        "monthlyRent": double.tryParse(rentController.text) ?? 0,
-        "attachedBathroom": attachedBathroom,
-        "wifi": wifiAvailable,
-        "amenities": {
-          "bed": int.tryParse(bedsController.text) ?? 0,
-          "fan": int.tryParse(fansController.text) ?? 0,
-          "cupboard": int.tryParse(cupboardController.text) ?? 0,
-          "studyTable": int.tryParse(studyTableController.text) ?? 0,
-        },
-
-        "status": roomStatus,
-      };
-
+      final body = _getRoomBody();
       await RoomService.createRoom(body);
-
       Navigator.pop(context);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Room Added Successfully")));
-
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Room added successfully"), behavior: SnackBarBehavior.floating));
       loadData();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  Future<void> _updateRoom(String id) async {
+    try {
+      final body = _getRoomBody();
+      await RoomService.updateRoom(id, body);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Room updated successfully"), behavior: SnackBarBehavior.floating));
+      loadData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  Map<String, dynamic> _getRoomBody() {
+    return {
+      "roomNo": roomNumberController.text,
+      "floor": floorController.text,
+      "roomType": roomTypeController.text,
+      "seating": sharingController.text,
+      "totalCapacity": int.tryParse(capacityController.text) ?? 0,
+      "occupied": int.tryParse(occupiedController.text) ?? 0,
+      "monthlyRent": double.tryParse(rentController.text) ?? 0,
+      "attachedBathroom": attachedBathroom,
+      "wifi": wifiAvailable,
+      "block": selectedBlock,
+      "amenities": {
+        "beds": int.tryParse(bedsController.text) ?? 0,
+        "fans": int.tryParse(fansController.text) ?? 0,
+        "cupboards": int.tryParse(cupboardController.text) ?? 0,
+        "tables": int.tryParse(studyTableController.text) ?? 0,
+      },
+      "status": roomStatus,
+    };
+  }
+
+  Future<void> _deleteRoom(Map room) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Delete Room"),
+        content: Text("Are you sure you want to delete Room ${room["roomNo"]}? This will remove all associated history."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await RoomService.deleteRoom(room["_id"].toString());
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Room deleted"), behavior: SnackBarBehavior.floating));
+        loadData();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating));
+      }
     }
   }
 
@@ -590,495 +287,783 @@ class _RoomsAndInventoryscreenState extends State<RoomsAndInventoryscreen> {
   Widget build(BuildContext context) {
     return MainLayout(
       title: "Rooms & Inventory",
-
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: loadData,
-
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-
-                padding: const EdgeInsets.all(15),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-
-                  children: [
-                    Row(
-                      children: [
-                        _buildStatCard(
-                          "Total Rooms",
-                          stats["totalRooms"]?.toString() ?? "0",
-                          Icons.meeting_room,
-                          Colors.indigo,
-                        ),
-
-                        _buildStatCard(
-                          "Beds",
-                          stats["totalBeds"]?.toString() ?? "0",
-                          Icons.bed,
-                          Colors.teal,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: [
-                        _buildStatCard(
-                          "Vacant",
-                          stats["vacantRooms"]?.toString() ?? "0",
-                          Icons.event_available,
-                          Colors.green,
-                        ),
-
-                        _buildStatCard(
-                          "Occupied",
-                          stats["occupiedRooms"]?.toString() ?? "0",
-                          Icons.hotel,
-                          Colors.red,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    TextField(
-                      controller: searchController,
-
-                      onChanged: searchRoom,
-
-                      decoration: InputDecoration(
-                        hintText: "Search room number...",
-
-                        prefixIcon: const Icon(Icons.search),
-
-                        filled: true,
-
-                        fillColor: Colors.grey.shade100,
-
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-
-                      child: Row(
+      body: Container(
+        color: const Color(0xffF6F8FC),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : PullToRefresh(
+                onRefresh: loadData,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _filterButton("All"),
-
-                          _filterButton("available"),
-                          _filterButton("full"),
-                          _filterButton("maintenance"),
+                          _buildHeader(),
+                          const SizedBox(height: 24),
+                          _buildKpiCards(),
+                          const SizedBox(height: 24),
+                          _buildSearchAndFilter(),
+                          const SizedBox(height: 24),
+                          if (filteredRooms.isEmpty)
+                            const _EmptyRoomsState()
+                          else
+                            _buildRoomsGrid(),
                         ],
                       ),
                     ),
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
 
-                    const SizedBox(height: 20),
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xff0891B2), Color(0xff06B6D4), Color(0xff22D3EE)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff06B6D4).withOpacity(.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Inventory Control",
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Manage room status, floor planning and hostel equipment tracking.",
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: _showAddRoomDialog,
+            icon: const Icon(Icons.add_home_work_rounded),
+            label: const Text("Add Room"),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xff0891B2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildKpiCards() {
+    return LayoutBuilder(builder: (context, constraints) {
+      int count = constraints.maxWidth > 900 ? 4 : 2;
+      return GridView.count(
+        crossAxisCount: count,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: constraints.maxWidth > 900 ? 2.5 : 1.8,
+        children: [
+          _buildKpiCard("Total Units", "${stats["totalRooms"]}", Icons.door_front_door_rounded, Colors.indigo),
+          _buildKpiCard("Bed Capacity", "${stats["totalBeds"]}", Icons.bed_rounded, Colors.teal),
+          _buildKpiCard("Vacant Units", "${stats["vacantRooms"]}", Icons.event_available_rounded, Colors.green),
+          _buildKpiCard("Full / Maint.", "${stats["occupiedRooms"]}", Icons.hotel_rounded, Colors.red),
+        ],
+      );
+    });
+  }
+
+  Widget _buildKpiCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xff111827))),
+                Text(title, style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: LayoutBuilder(builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
+            children: [
+              _buildSearchField(),
+              const Divider(height: 24),
+              _buildFilterDropdown(),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(flex: 3, child: _buildSearchField()),
+            const SizedBox(width: 16),
+            Container(width: 1, height: 32, color: Colors.grey.shade200),
+            const SizedBox(width: 16),
+            Expanded(flex: 2, child: _buildFilterDropdown()),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: searchController,
+      onChanged: (v) => applyFilters(),
+      decoration: InputDecoration(
+        hintText: "Search room number...",
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        prefixIcon: const Icon(Icons.search, color: Color(0xff0891B2)),
+        border: InputBorder.none,
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown() {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: selectedFilter,
+        isExpanded: true,
+        icon: const Icon(Icons.filter_list_rounded, color: Colors.grey),
+        items: const [
+          DropdownMenuItem(value: "All", child: Text("All Status")),
+          DropdownMenuItem(value: "available", child: Text("Available")),
+          DropdownMenuItem(value: "full", child: Text("Full")),
+          DropdownMenuItem(value: "maintenance", child: Text("Maintenance")),
+        ],
+        onChanged: (value) {
+          setState(() {
+            selectedFilter = value!;
+            applyFilters();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildRoomsGrid() {
+    return LayoutBuilder(builder: (context, constraints) {
+      final double cardWidth = 380;
+      final int crossAxisCount = (constraints.maxWidth / cardWidth).floor().clamp(1, 3);
+      
+      return Wrap(
+        spacing: 20,
+        runSpacing: 20,
+        children: filteredRooms.map((item) {
+          return SizedBox(
+            width: crossAxisCount == 1 ? constraints.maxWidth : (constraints.maxWidth - (crossAxisCount - 1) * 20) / crossAxisCount,
+            child: RoomCard(
+              room: item,
+              onEdit: () => _showEditRoomDialog(item),
+              onDelete: () => _deleteRoom(item),
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
+}
+
+class RoomCard extends StatelessWidget {
+  final Map room;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const RoomCard({
+    super.key,
+    required this.room,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = (room["status"] ?? "available").toString().toLowerCase();
+    Color statusColor = Colors.green;
+    if (status == "full") statusColor = Colors.orange;
+    if (status == "maintenance") statusColor = Colors.red;
+
+    final int occupied = room["occupied"] ?? 0;
+    final int total = room["totalCapacity"] ?? 1;
+    final double progress = total == 0 ? 0 : occupied / total;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(.04), blurRadius: 16, offset: const Offset(0, 8))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _buildAvatar(room["roomNo"]?.toString() ?? "?"),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Room ${room["roomNo"] ?? ""}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text("${room["roomType"] ?? "-"} • Block ${room["block"] ?? "-"}", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                  ],
+                ),
+              ),
+              _StatusBadge(status: status, color: statusColor),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _AmenityIcon(icon: Icons.people_outline_rounded, label: room["seating"] ?? "-"),
+              _AmenityIcon(icon: Icons.layers_outlined, label: "Floor ${room["floor"] ?? "-"}"),
+              _AmenityIcon(icon: Icons.currency_rupee_rounded, label: "₹${room["monthlyRent"] ?? 0}"),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              if (room["wifi"] == true) _FeatureChip(icon: Icons.wifi, label: "WiFi"),
+              if (room["attachedBathroom"] == true) ...[
+                if (room["wifi"] == true) const SizedBox(width: 8),
+                _FeatureChip(icon: Icons.bathroom_outlined, label: "Attached"),
+              ],
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text("Furniture", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xff374151))),
+          const SizedBox(height: 12),
+          _FurnitureGrid(amenities: room["amenities"]),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Occupancy", style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text("$occupied / $total Beds", style: TextStyle(color: Colors.grey.shade700, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey.shade100,
+              color: statusColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(onPressed: onEdit, icon: const Icon(Icons.edit_note_rounded, color: Colors.blue)),
+              IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded, color: Colors.red)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String roomNo) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xff0891B2).withOpacity(0.8), const Color(0xff06B6D4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(Icons.meeting_room_rounded, color: Colors.white, size: 24),
+    );
+  }
+}
+
+class _FurnitureGrid extends StatelessWidget {
+  final Map? amenities;
+  const _FurnitureGrid({this.amenities});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _FurnitureItem(icon: Icons.bed_outlined, count: amenities?["beds"] ?? 0, label: "Beds"),
+        _FurnitureItem(icon: Icons.air_rounded, count: amenities?["fans"] ?? 0, label: "Fans"),
+        _FurnitureItem(icon: Icons.inventory_2_outlined, count: amenities?["cupboards"] ?? 0, label: "Cupboards"),
+        _FurnitureItem(icon: Icons.desk_outlined, count: amenities?["tables"] ?? 0, label: "Tables"),
+      ],
+    );
+  }
+}
+
+class _FurnitureItem extends StatelessWidget {
+  final IconData icon;
+  final int count;
+  final String label;
+  const _FurnitureItem({required this.icon, required this.count, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 18, color: Colors.grey.shade400),
+        const SizedBox(height: 4),
+        Text("$count", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  final Color color;
+  const _StatusBadge({required this.status, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+      ),
+    );
+  }
+}
+
+class _AmenityIcon extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _AmenityIcon({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: Colors.grey.shade400),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(color: Colors.grey.shade700, fontSize: 12, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}
+
+class _FeatureChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _FeatureChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.blue.shade700),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(color: Colors.blue.shade700, fontSize: 10, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}
+
+class RoomFormDialog extends StatefulWidget {
+  final String title;
+  final VoidCallback onSave;
+  final TextEditingController roomNumberController;
+  final TextEditingController floorController;
+  final TextEditingController occupiedController;
+  final TextEditingController roomTypeController;
+  final TextEditingController sharingController;
+  final TextEditingController capacityController;
+  final TextEditingController rentController;
+  final TextEditingController bedsController;
+  final TextEditingController fansController;
+  final TextEditingController cupboardController;
+  final TextEditingController studyTableController;
+  final String selectedBlock;
+  final bool attachedBathroom;
+  final bool wifiAvailable;
+  final String roomStatus;
+  final ValueChanged<String?> onBlockChanged;
+  final ValueChanged<bool?> onBathroomChanged;
+  final ValueChanged<bool?> onWifiChanged;
+  final ValueChanged<String?> onStatusChanged;
+
+  const RoomFormDialog({
+    super.key,
+    required this.title,
+    required this.onSave,
+    required this.roomNumberController,
+    required this.floorController,
+    required this.occupiedController,
+    required this.roomTypeController,
+    required this.sharingController,
+    required this.capacityController,
+    required this.rentController,
+    required this.bedsController,
+    required this.fansController,
+    required this.cupboardController,
+    required this.studyTableController,
+    required this.selectedBlock,
+    required this.attachedBathroom,
+    required this.wifiAvailable,
+    required this.roomStatus,
+    required this.onBlockChanged,
+    required this.onBathroomChanged,
+    required this.onWifiChanged,
+    required this.onStatusChanged,
+  });
+
+  @override
+  State<RoomFormDialog> createState() => _RoomFormDialogState();
+}
+
+class _RoomFormDialogState extends State<RoomFormDialog> {
+  late String _currentBlock;
+  late bool _currentBathroom;
+  late bool _currentWifi;
+  late String _currentStatus;
+  late String _currentRoomType;
+  late String _currentSharing;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentBlock = widget.selectedBlock;
+    _currentBathroom = widget.attachedBathroom;
+    _currentWifi = widget.wifiAvailable;
+    _currentStatus = widget.roomStatus;
+
+    // Initialize dropdown values from controllers
+    _currentRoomType = widget.roomTypeController.text.isEmpty ? "AC" : widget.roomTypeController.text;
+    _currentSharing = widget.sharingController.text.isEmpty ? "2 Sharing" : widget.sharingController.text;
+
+    // Ensure controllers have initial values if they were empty
+    if (widget.roomTypeController.text.isEmpty) widget.roomTypeController.text = _currentRoomType;
+    if (widget.sharingController.text.isEmpty) widget.sharingController.text = _currentSharing;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.add_home_work_rounded, color: Color(0xff0891B2), size: 28),
+                  const SizedBox(width: 12),
+                  Text(widget.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close), style: IconButton.styleFrom(backgroundColor: Colors.grey.shade100)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle("Basic Info"),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Room Overview",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                        Expanded(child: _buildTextField("Room No *", widget.roomNumberController, "e.g. 101")),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildTextField("Floor", widget.floorController, "e.g. 1st")),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDropdownField<String>(
+                            "Room Type",
+                            _currentRoomType,
+                            ["AC", "Non AC"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            (v) {
+                              setState(() {
+                                _currentRoomType = v!;
+                                widget.roomTypeController.text = v;
+                              });
+                            },
                           ),
                         ),
-                        ElevatedButton.icon(
-                          onPressed: _showAddRoomDialog,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor:
-                                Colors.white, // Text aur icon ka color
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildDropdownField<String>(
+                            "Sharing",
+                            _currentSharing,
+                            ["1 Sharing", "2 Sharing", "3 Sharing", "4 Sharing"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            (v) {
+                              setState(() {
+                                _currentSharing = v!;
+                                widget.sharingController.text = v;
+                              });
+                            },
                           ),
-                          icon: const Icon(Icons.add),
-                          label: const Text("Add Room"),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 12),
-
-                    ListView.builder(
-                      shrinkWrap: true,
-
-                      physics: const NeverScrollableScrollPhysics(),
-
-                      itemCount: filteredRooms.length,
-
-                      itemBuilder: (context, index) {
-                        return _roomCard(filteredRooms[index]);
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField("Capacity", widget.capacityController, "Total Beds", keyboardType: TextInputType.number)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildTextField("Occupied", widget.occupiedController, "Current", keyboardType: TextInputType.number)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField("Rent", widget.rentController, "Monthly ₹", keyboardType: TextInputType.number)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildDropdownField<String>(
+                            "Block",
+                            _currentBlock,
+                            ["A", "B", "C", "D"].map((e) => DropdownMenuItem(value: e, child: Text("Block $e"))).toList(),
+                            (v) {
+                              setState(() => _currentBlock = v!);
+                              widget.onBlockChanged(v);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle("Facilities"),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDropdownField<bool>(
+                            "Bathroom",
+                            _currentBathroom,
+                            [const DropdownMenuItem(value: true, child: Text("Attached")), const DropdownMenuItem(value: false, child: Text("Common"))],
+                            (v) {
+                              setState(() => _currentBathroom = v!);
+                              widget.onBathroomChanged(v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildDropdownField<bool>(
+                            "WiFi",
+                            _currentWifi,
+                            [const DropdownMenuItem(value: true, child: Text("Available")), const DropdownMenuItem(value: false, child: Text("No WiFi"))],
+                            (v) {
+                              setState(() => _currentWifi = v!);
+                              widget.onWifiChanged(v);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle("Amenities Count"),
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField("Beds", widget.bedsController, "0", keyboardType: TextInputType.number)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildTextField("Fans", widget.fansController, "0", keyboardType: TextInputType.number)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildTextField("Cupboards", widget.cupboardController, "0", keyboardType: TextInputType.number)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildTextField("Tables", widget.studyTableController, "0", keyboardType: TextInputType.number)),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildDropdownField<String>(
+                      "Room Status",
+                      _currentStatus,
+                      ["available", "full", "maintenance"].map((e) => DropdownMenuItem(value: e, child: Text(e.toUpperCase()))).toList(),
+                      (v) {
+                        setState(() => _currentStatus = v!);
+                        widget.onStatusChanged(v);
                       },
                     ),
-
-                    const SizedBox(height: 100),
                   ],
                 ),
               ),
             ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: widget.onSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff0891B2),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Save Details"),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  /// ===============================
-  /// 📊 STAT CARD
-  /// ===============================
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Expanded(
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(title.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 1)),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, String hint, {TextInputType keyboardType = TextInputType.text}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade800, fontSize: 13)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BoxBorderSide(color: Color(0xff0891B2), width: 1.5)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField<T>(String label, T value, List<DropdownMenuItem<T>> items, ValueChanged<T?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade800, fontSize: 13)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<T>(
+          value: value,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+          ),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class BoxBorderSide extends BorderSide {
+  const BoxBorderSide({super.color, super.width});
+}
+
+class _EmptyRoomsState extends StatelessWidget {
+  const _EmptyRoomsState();
+  @override
+  Widget build(BuildContext context) {
+    return Center(
       child: Container(
-        margin: const EdgeInsets.all(6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.all(40),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: color.withOpacity(.12),
-              child: Icon(icon, color: color, size: 24),
-            ),
-
-            const SizedBox(height: 18),
-
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-              title,
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-            ),
+            Icon(Icons.meeting_room_outlined, size: 80, color: Colors.grey.shade300),
+            const SizedBox(height: 20),
+            const Text("No Rooms Found", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text("Try changing your filters or add a new room to get started.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade500)),
           ],
         ),
-      ),
-    );
-  }
-
-  /// ===============================
-  /// FILTER BUTTON
-  /// ===============================
-  Widget _filterButton(String title) {
-    bool isSelected = selectedFilter == title;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(25),
-
-        onTap: () {
-          filterRooms(title);
-        },
-
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.indigo : Colors.grey.shade200,
-
-            borderRadius: BorderRadius.circular(25),
-
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.indigo.withOpacity(.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-
-          child: Text(
-            title,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _roomCard(Map room) {
-    String status = (room["status"] ?? "Available").toString();
-
-    Color statusColor = Colors.green;
-
-    if (status.toLowerCase() == "full") {
-      statusColor = Colors.orange;
-    } else if (status.toLowerCase() == "maintenance") {
-      statusColor = Colors.red;
-    }
-
-    int occupied = room["occupied"] ?? 0;
-    int total = room["totalCapacity"] ?? 1;
-
-    double progress = total == 0 ? 0 : occupied / total;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(.12),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// HEADER
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.indigo.withOpacity(.1),
-                  child: const Icon(Icons.meeting_room, color: Colors.indigo),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Room ${room["roomNo"] ?? ""}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-
-                      Text(
-                        room["roomType"] ?? "-",
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(.15),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 18),
-            _buildInfoRow(Icons.location_city, "Block", room["block"] ?? "-"),
-
-            _buildInfoRow(Icons.hotel, "Room Type", room["roomType"] ?? "-"),
-            _buildInfoRow(Icons.people, "Sharing", room["seating"] ?? "-"),
-
-            _buildInfoRow(
-              Icons.bed,
-              "Capacity",
-              "${room["totalCapacity"] ?? 0} Beds",
-            ),
-
-            _buildInfoRow(Icons.layers, "Floor", room["floor"] ?? "-"),
-
-            _buildInfoRow(
-              Icons.currency_rupee,
-              "Rent",
-              "₹${room["monthlyRent"] ?? 0}",
-            ),
-
-            _buildInfoRow(
-              Icons.bathroom,
-              "Attached Bathroom",
-              room["attachedBathroom"] == true ? "Yes" : "No",
-            ),
-
-            _buildInfoRow(
-              Icons.wifi,
-              "WiFi",
-              room["wifi"] == true ? "Yes" : "No",
-            ),
-
-            const SizedBox(height: 12),
-
-            const Text(
-              "Furniture",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-
-            const SizedBox(height: 8),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Column(
-                  children: [
-                    const Text("Beds"),
-                    Text(
-                      "${room["amenities"]?["beds"] ?? 0}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-
-                Column(
-                  children: [
-                    const Text("Fans"),
-                    Text(
-                      "${room["amenities"]?["fans"] ?? 0}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-
-                Column(
-                  children: [
-                    const Text("Cupboards"),
-                    Text(
-                      "${room["amenities"]?["cupboards"] ?? 0}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-
-                Column(
-                  children: [
-                    const Text("Tables"),
-                    Text(
-                      "${room["amenities"]?["tables"] ?? 0}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            Text(
-              "Occupancy",
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade300,
-                color: statusColor,
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                "$occupied / $total Beds",
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ),
-
-            const Divider(height: 25),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    _showEditRoomDialog(room);
-                  },
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                ),
-
-                IconButton(
-                  onPressed: () {
-                    _deleteRoom(room);
-                  },
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.green, size: 20),
-
-          const SizedBox(width: 12),
-
-          Text(title, style: TextStyle(color: Colors.grey.shade700)),
-
-          const Spacer(),
-
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
       ),
     );
   }

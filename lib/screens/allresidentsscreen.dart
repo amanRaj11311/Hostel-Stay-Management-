@@ -273,7 +273,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
                     onRefresh: loadData,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(isMobile ? 14 : 24),
+                      padding: EdgeInsets.all(isMobile ? 16 : 28),
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 1420),
@@ -281,11 +281,11 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _header(isMobile),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 22),
                               _summarySection(isMobile),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 22),
                               _filterPanel(isMobile),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 24),
                               if (filteredResidents.isEmpty)
                                 _emptyState()
                               else if (isDesktop)
@@ -305,57 +305,114 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _header(bool isMobile) {
-    final titleBlock = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'All Residents',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isMobile ? 20 : 28),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xff635BFF), Color(0xff7C6FFF), Color(0xff9F97FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _primary.withOpacity(0.2),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Manage hostelers, room assignment, contacts, attendance, and fees.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: _mutedTextColor(context)),
-        ),
-      ],
-    );
-
-    final addButton = SizedBox(
-      width: isMobile ? double.infinity : null,
-      child: FilledButton.icon(
-        onPressed: () => _showResidentDialog(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Resident'),
-        style: FilledButton.styleFrom(
-          backgroundColor: _primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
+        ],
       ),
-    );
-
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [titleBlock, const SizedBox(height: 16), addButton],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(child: titleBlock),
-        const SizedBox(width: 14),
-        addButton,
-      ],
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'All Residents',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Manage hostelers, room assignments, attendance & fees',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _showResidentDialog(),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Add Resident'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: _primary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'All Residents',
+                        style:
+                            Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Manage hostelers, room assignments, attendance & fees',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withOpacity(0.85),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                FilledButton.icon(
+                  onPressed: () => _showResidentDialog(),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add Resident'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: _primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -416,31 +473,53 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _summaryCard(_SummaryData data) {
-    return _glassCard(
-      padding: const EdgeInsets.all(16),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: data.color.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              color: data.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
+              color: data.color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(data.icon, color: data.color),
+            child: Center(
+              child: Icon(
+                data.icon,
+                color: data.color,
+                size: 24,
+              ),
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   data.value,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: data.color,
+                  ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   data.title,
                   maxLines: 1,
@@ -459,13 +538,28 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _filterPanel(bool isMobile) {
-    return _glassCard(
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 14 : 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: isMobile
           ? Column(
               children: [
                 _searchField(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 Row(
                   children: [
                     Expanded(child: _blockFilter()),
@@ -478,11 +572,11 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
           : Row(
               children: [
                 Expanded(flex: 2, child: _searchField()),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 Expanded(child: _blockFilter()),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 Expanded(child: _statusFilter()),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 IconButton.filledTonal(
                   tooltip: 'Refresh',
                   onPressed: loadData,
@@ -566,15 +660,36 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _residentListPanel() {
-    return _glassCard(
-      padding: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              color: _primary.withValues(alpha: 0.04),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              decoration: BoxDecoration(
+                color: _primary.withValues(alpha: 0.05),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey.withOpacity(0.1),
+                  ),
+                ),
+              ),
               child: Row(
                 children: [
                   _tableHeader('Resident', flex: 4),
@@ -708,7 +823,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 880 ? 2 : 1;
-        final spacing = 14.0;
+        final spacing = 16.0;
         final cardWidth =
             (constraints.maxWidth - spacing * (columns - 1)) / columns;
 
@@ -732,15 +847,30 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
     final status = _attendanceValue(resident);
     final fee = _feeValue(resident);
 
-    return _glassCard(
-      padding: const EdgeInsets.all(16),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               _avatar(resident, size: 52),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,7 +900,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
               _chip(_attendanceLabel(status), _statusColor(status), dot: true),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           _miniInfoGrid([
             _InfoItem(
               Icons.meeting_room_rounded,
@@ -799,9 +929,9 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
               _text(resident['bloodGroup'], '-'),
             ),
           ]),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           _sectionTitle(Icons.contact_phone_rounded, 'Contact Registry'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _detailLine(
             Icons.phone_android_rounded,
             'Student',
@@ -822,7 +952,7 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
             'Address',
             _text(resident['address'], '-'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -1113,24 +1243,45 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _emptyDetailPanel() {
-    return _glassCard(
+    return Container(
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _primary.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.person_search_rounded,
-            size: 54,
+            size: 56,
             color: _mutedTextColor(context),
           ),
-          const SizedBox(height: 12),
-          const Text(
+          const SizedBox(height: 14),
+          Text(
             'Select a resident',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Resident details will appear here.',
-            style: TextStyle(color: _mutedTextColor(context)),
+            style: TextStyle(
+              color: _mutedTextColor(context),
+              fontSize: 13,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1139,35 +1290,55 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
   }
 
   Widget _emptyState() {
-    return _glassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 56),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _primary.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Center(
         child: Column(
           children: [
             Container(
-              width: 74,
-              height: 74,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: _primary.withValues(alpha: 0.10),
+                color: _primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.search_off_rounded,
                 color: _primary,
-                size: 36,
+                size: 40,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Text(
               'No residents found',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: Colors.black87,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
-              'Try changing the search, block, or status filter.',
-              style: TextStyle(color: _mutedTextColor(context)),
+              'Try adjusting your search, block, or status filters.',
+              style: TextStyle(
+                color: _mutedTextColor(context),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -2005,19 +2176,23 @@ class _AllresidentSscreenState extends State<AllresidentSscreen> {
       prefixIcon: icon == null ? null : Icon(icon, size: 20),
       suffixIcon: suffix,
       filled: true,
-      fillColor: Theme.of(context).colorScheme.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: _borderColor(context)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: _borderColor(context)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.withOpacity(0.15)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: _primary, width: 1.4),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _primary, width: 1.5),
+      ),
+      labelStyle: TextStyle(
+        color: Colors.grey.shade600,
+        fontWeight: FontWeight.w500,
       ),
     );
   }
