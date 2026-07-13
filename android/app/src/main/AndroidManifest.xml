@@ -2,7 +2,7 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="nia"
+        android:label="NIA"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

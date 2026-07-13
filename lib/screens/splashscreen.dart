@@ -83,10 +83,10 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 25),
 
             const Text(
-              "Live Attendance • Rooms & inventory • Complaints & help •  Announcement",
+              "Live Attendance • Rooms & inventory • Complaints",
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 12,

@@ -159,7 +159,7 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
-  } 
+  }
 
   void _confirmMarkPaid(Map<String, dynamic> fee) {
     showDialog(
@@ -686,14 +686,16 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
       child: Row(
         children: [
           Expanded(
-            flex: 4,
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: "Search by name, ID, room no...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
+            child: SizedBox(
+              width: context.w * 0.32,
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: "Search by name, ID, room no...",
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(context.w * 0.03),
+                  ),
                 ),
               ),
             ),
@@ -701,12 +703,17 @@ class _FeesCollectionScreenState extends State<FeesCollectionScreen> {
 
           const SizedBox(width: 20),
 
-          Expanded(
+          SizedBox(
+            width: context.w * 0.32,
             child: DropdownButtonFormField<String>(
               value: selectedStatus,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(context.w * 0.03),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
               ),
               items: const [
