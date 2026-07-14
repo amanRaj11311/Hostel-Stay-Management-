@@ -301,7 +301,7 @@ class _RegistrationReqestsScreenState extends State<RegistrationReqestsScreen> {
                   child: Column(
                     children: [
                       _field(regIdController, "Registration ID", Icons.tag),
-                      _field(nameController, "Student Name", Icons.person_outline),
+                      _field(nameController, "Student Name", Icons.person_outline,),
                       Row(
                         children: [
                           Expanded(child: _field(emailController, "Email", Icons.email_outlined)),
