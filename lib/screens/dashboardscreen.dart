@@ -1,3 +1,5 @@
+// lib/screens/dashboardscreen.dart
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -127,18 +129,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final copied = List<dynamic>.from(list);
 
     copied.sort((a, b) {
-      final aDate = DateTime.tryParse(_pick(a, [
-        "createdAt",
-        "created_at",
-        "date",
-        "submittedAt",
-      ]));
-      final bDate = DateTime.tryParse(_pick(b, [
-        "createdAt",
-        "created_at",
-        "date",
-        "submittedAt",
-      ]));
+      final aDate = DateTime.tryParse(_pick(a, ["createdAt", "created_at", "date", "submittedAt"]));
+      final bDate = DateTime.tryParse(_pick(b, ["createdAt", "created_at", "date", "submittedAt"]));
 
       if (aDate == null && bDate == null) return 0;
       if (aDate == null) return 1;
@@ -169,9 +161,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Visitor approval failed")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Visitor approval failed")));
     } finally {
       if (!mounted) return;
 
@@ -189,12 +179,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         processingVisitorId = visitorId;
       });
 
-      await VisitorService.rejectVisitor(
-        visitorId,
-        {
-          "reason": "Cancelled from dashboard",
-        },
-      );
+      await VisitorService.rejectVisitor(visitorId, {
+        "reason": "Cancelled from dashboard",
+      });
 
       await loadDashboard();
 
@@ -206,9 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Visitor cancel failed")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Visitor cancel failed")));
     } finally {
       if (!mounted) return;
 
@@ -242,45 +227,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const _DashboardHeader(),
-                        const SizedBox(height: 18),
-
+                        const SizedBox(height: 24),
                         if (errorMessage != null)
                           _ErrorCard(
                             message: errorMessage!,
                             onRetry: loadDashboard,
                           ),
-
                         if (!hasPermission("manage_dashboard"))
                           const _EmptyStateCard(
                             icon: Icons.lock_outline_rounded,
                             title: "No Dashboard Access",
-                            message:
-                            "You do not have permission to view this dashboard.",
+                            message: "You do not have permission to view this dashboard.",
                           )
-              else ...[
-              _buildKpiCards(),
-              const SizedBox(height: 20),
-
-              if (hasPermission("manage_attendance")) ...[
-              _buildAttendanceCards(),
-              const SizedBox(height: 20),
-              ],
-
-              _ResponsiveSectionWrap(
-              children: [
-              if (hasPermission("manage_visitors")) _buildVisitorsCards(),
-              _buildRecentComplaintCards(),
-              if (hasPermission("manage_announcements")) _buildAnnouncementCards(),
-              ],
-              ),
-
-              const SizedBox(height: 20),
-
-              _buildQuickActions(),
-              ],
-
+                        else ...[
+                          _buildKpiCards(),
+                          const SizedBox(height: 24),
+                          if (hasPermission("manage_attendance")) ...[
+                            _buildAttendanceCards(),
+                            const SizedBox(height: 24),
+                          ],
+                          _ResponsiveSectionWrap(
+                            children: [
+                              if (hasPermission("manage_visitors")) _buildVisitorsCards(),
+                              _buildRecentComplaintCards(),
+                              if (hasPermission("manage_announcements")) _buildAnnouncementCards(),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          _buildQuickActions(),
+                          const SizedBox(height: 40),
                         ],
-
+                      ],
                     ),
                   ),
                 ),
@@ -304,32 +281,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _KpiData(
         title: "Vacant Rooms",
         value: _value("availableRooms"),
-        subtitle: "Available rooms",
+        subtitle: "Available units",
         icon: Icons.meeting_room_rounded,
         color: const Color(0xff4F46E5),
       ),
       _KpiData(
         title: "Pending Complaints",
         value: _value("pendingComplaints"),
-        subtitle: "Need action",
+        subtitle: "Awaiting action",
         icon: Icons.report_problem_rounded,
         color: const Color(0xffDC2626),
       ),
       _KpiData(
         title: "Today Visitors",
         value: _value("todayVisitors"),
-        subtitle: "Visitor entries",
+        subtitle: "Checked-in today",
         icon: Icons.badge_rounded,
         color: const Color(0xffEA580C),
       ),
     ];
 
-    return _ResponsiveWrap(
-      minItemWidth: 240,
-      spacing: 14,
-      children: cards.map((item) {
-        return _DecoratedKpiCard(data: item);
-      }).toList(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        // Mobile: 2 cards per row
+        // Tablet/Desktop: Auto-fit
+        final int columns = width < 600 ? 2 : (width < 900 ? 2 : 4);
+
+        const spacing = 16.0;
+        final itemWidth =
+            (width - ((columns - 1) * spacing)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: cards.map((item) {
+            return SizedBox(
+              width: itemWidth,
+              child: _DecoratedKpiCard(data: item),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -378,13 +372,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         screen: const FeesCollectionScreen(),
       ),
       _QuickActionData(
-        title: "Announce",
+        title: "Announcements",
         icon: Icons.campaign_rounded,
         color: const Color(0xff2563EB),
         screen: const AnnouncementScreen(),
       ),
       _QuickActionData(
-        title: "Users",
+        title: "Staff",
         icon: Icons.manage_accounts_rounded,
         color: const Color(0xff475569),
         screen: const UsermanAgementScreen(),
@@ -399,26 +393,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return _SectionCard(
       title: "Quick Actions",
-      subtitle: "Open important modules quickly",
-      icon: Icons.flash_on_rounded,
+      subtitle: "Launch hostel management modules",
+      icon: Icons.auto_awesome_mosaic_rounded,
       actionText: "Refresh",
       onAction: loadDashboard,
-      child: _ResponsiveWrap(
-        minItemWidth: 130,
-        spacing: 12,
-        children: actions.map((action) {
-          return _QuickActionCard(
-            data: action,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => action.screen,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final int columns = width < 600 ? 3 : (width < 900 ? 5 : 5);
+          final spacing = width < 600 ? 12.0 : 16.0;
+          final cardWidth = (width - (spacing * (columns - 1))) / columns;
+
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: actions.map((action) {
+              return SizedBox(
+                width: cardWidth,
+                child: _QuickActionCard(
+                  data: action,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => action.screen),
+                    );
+                  },
                 ),
               );
-            },
+            }).toList(),
           );
-        }).toList(),
+        },
       ),
     );
   }
@@ -426,26 +430,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildAttendanceCards() {
     return _SectionCard(
       title: "Live Attendance",
-      subtitle: "Recent student check-in and check-out details",
+      subtitle: "Latest student entry & exit logs",
       icon: Icons.how_to_reg_rounded,
       actionText: "View All",
       onAction: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const LiveAttendanceScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const LiveAttendanceScreen()),
         );
       },
       child: recentAttendance.isEmpty
           ? const _EmptyStateCard(
         icon: Icons.event_busy_rounded,
         title: "No Attendance Found",
-        message: "Recent attendance records will appear here.",
+        message: "Real-time records will appear here.",
       )
           : _ResponsiveWrap(
-        minItemWidth: 245,
-        spacing: 12,
+        minItemWidth: 260,
+        spacing: 14,
         children: recentAttendance.take(4).map((item) {
           return _AttendanceCard(
             studentName: _pick(item, ["studentName", "name", "residentName"]),
@@ -461,23 +463,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildVisitorsCards() {
     return _SectionCard(
-      title: "Recent Visitors",
-      subtitle: "Approve or cancel visitor requests",
+      title: "Visitor Activity",
+      subtitle: "Pending approvals and guest logs",
       icon: Icons.people_alt_rounded,
-      actionText: "View All",
+      actionText: "Manage",
       onAction: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const VisitorApprovalsScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const VisitorApprovalsScreen()),
         );
       },
       child: recentVisitors.isEmpty
           ? const _EmptyStateCard(
         icon: Icons.person_off_rounded,
-        title: "No Visitors Found",
-        message: "Visitor details will appear here.",
+        title: "No Recent Visitors",
+        message: "All clear! No pending visitor requests.",
       )
           : Column(
         children: recentVisitors.take(4).map<Widget>((visitor) {
@@ -490,8 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             roomNo: _pick(visitor, ["roomNo", "room", "roomNumber"]),
             status: status,
             isLoading: processingVisitorId == visitorId,
-            canTakeAction: visitorId.isNotEmpty &&
-                !_isClosedVisitorStatus(status),
+            canTakeAction: visitorId.isNotEmpty && !_isClosedVisitorStatus(status),
             onApprove: () => approveVisitor(visitorId),
             onCancel: () => cancelVisitor(visitorId),
           );
@@ -502,47 +501,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildRecentComplaintCards() {
     return _SectionCard(
-      title: "Recent Complaints",
-      subtitle: "Latest complaint and help requests",
+      title: "Maintenance Tracker",
+      subtitle: "Active help requests from residents",
       icon: Icons.support_agent_rounded,
-      actionText: "View All",
+      actionText: "Support",
       onAction: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const ComplaintsAndHelpscreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const ComplaintsAndHelpscreen()),
         );
       },
       child: recentComplaints.isEmpty
           ? const _EmptyStateCard(
         icon: Icons.mark_chat_unread_outlined,
-        title: "No Complaints Found",
-        message: "Recent complaint records will appear here.",
+        title: "No Active Complaints",
+        message: "Residents haven't reported any issues yet.",
       )
           : Column(
         children: recentComplaints.take(4).map<Widget>((item) {
           return _ComplaintCard(
-            title: _pick(
-              item,
-              ["title", "subject", "complaintTitle", "category"],
-              fallback: "Complaint",
-            ),
-            description: _pick(
-              item,
-              ["description", "message", "details", "complaint"],
-              fallback: "No description available",
-            ),
-            studentName: _pick(
-              item,
-              ["studentName", "residentName", "createdBy", "name"],
-            ),
+            title: _pick(item, ["title", "subject", "complaintTitle", "category"], fallback: "Complaint"),
+            description: _pick(item, ["description", "message", "details", "complaint"], fallback: "No details"),
+            studentName: _pick(item, ["studentName", "residentName", "createdBy", "name"]),
             roomNo: _pick(item, ["roomNo", "room", "roomNumber"]),
             status: _pick(item, ["status"], fallback: "pending"),
             priority: _pick(item, ["priority"], fallback: "--"),
-            date: _formatDate(
-              _pick(item, ["createdAt", "created_at", "date", "submittedAt"]),
-            ),
+            date: _formatDate(_pick(item, ["createdAt", "created_at", "date", "submittedAt"])),
           );
         }).toList(),
       ),
@@ -551,23 +535,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildAnnouncementCards() {
     return _SectionCard(
-      title: "Announcements",
-      subtitle: "Important hostel updates",
+      title: "Broadcasts",
+      subtitle: "Important hostel-wide updates",
       icon: Icons.campaign_rounded,
-      actionText: "View All",
+      actionText: "History",
       onAction: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const AnnouncementScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const AnnouncementScreen()),
         );
       },
       child: recentAnnouncements.isEmpty
           ? const _EmptyStateCard(
         icon: Icons.notifications_none_rounded,
         title: "No Announcements",
-        message: "Latest announcements will appear here.",
+        message: "Latest announcements will show up here.",
       )
           : Column(
         children: recentAnnouncements.take(4).map<Widget>((item) {
@@ -589,11 +571,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return value.toString();
   }
 
-  String _pick(
-      dynamic item,
-      List<String> keys, {
-        String fallback = "--",
-      }) {
+  String _pick(dynamic item, List<String> keys, {String fallback = "--"}) {
     if (item is! Map) return fallback;
 
     for (final key in keys) {
@@ -607,16 +585,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _idOf(dynamic item) {
-    return _pick(
-      item,
-      ["_id", "id", "visitorId", "visitor_id"],
-      fallback: "",
-    );
+    return _pick(item, ["_id", "id", "visitorId", "visitor_id"], fallback: "");
   }
 
   bool _isClosedVisitorStatus(String status) {
     final value = status.toLowerCase();
-
     return value == "approved" ||
         value == "rejected" ||
         value == "cancelled" ||
@@ -628,36 +601,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _formatTime(dynamic value) {
     if (value == null) return "--";
-
     final text = value.toString().trim();
     if (text.isEmpty || text == "--") return "--";
-
     final dateTime = DateTime.tryParse(text);
-
     if (dateTime != null) {
       final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
       final minute = dateTime.minute.toString().padLeft(2, "0");
       final suffix = dateTime.hour >= 12 ? "PM" : "AM";
       return "$hour:$minute $suffix";
     }
-
     return text;
   }
 
   String _formatDate(dynamic value) {
     if (value == null) return "--";
-
     final text = value.toString().trim();
     if (text.isEmpty || text == "--") return "--";
-
     final dateTime = DateTime.tryParse(text);
-
     if (dateTime == null) return text;
-
     final day = dateTime.day.toString().padLeft(2, "0");
     final month = dateTime.month.toString().padLeft(2, "0");
     final year = dateTime.year.toString();
-
     return "$day/$month/$year";
   }
 }
@@ -669,48 +633,44 @@ class _DashboardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xff1E40AF),
-            Color(0xff2563EB),
-            Color(0xff38BDF8),
-          ],
+          colors: [Color(0xff1E40AF), Color(0xff2563EB), Color(0xff38BDF8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff2563EB).withOpacity(.22),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: const Color(0xff2563EB).withOpacity(.25),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Stack(
         children: [
           Positioned(
-            right: -22,
-            top: -28,
+            right: -30,
+            top: -30,
             child: Container(
-              height: 105,
-              width: 105,
+              height: 120,
+              width: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.12),
+                color: Colors.white.withOpacity(.1),
                 shape: BoxShape.circle,
               ),
             ),
           ),
           Positioned(
-            right: 42,
-            bottom: -40,
+            left: -20,
+            bottom: -50,
             child: Container(
-              height: 90,
-              width: 90,
+              height: 140,
+              width: 140,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.08),
+                color: Colors.white.withOpacity(.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -718,38 +678,39 @@ class _DashboardHeader extends StatelessWidget {
           Row(
             children: [
               Container(
-                height: 58,
-                width: 58,
+                height: 64,
+                width: 64,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(.18),
-                  borderRadius: BorderRadius.circular(18),
+                  color: Colors.white.withOpacity(.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: const Icon(
                   Icons.dashboard_customize_rounded,
                   color: Colors.white,
-                  size: 30,
+                  size: 32,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Hostel Overview",
+                      "Hostel Command Center",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     SizedBox(height: 6),
                     Text(
-                      "Track rooms, students, visitors, complaints and updates.",
+                      "Comprehensive overview of rooms, student logs, and services.",
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
-                        height: 1.3,
+                        fontSize: 14,
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -814,18 +775,13 @@ class _ResponsiveWrap extends StatelessWidget {
         if (count < 1) count = 1;
         if (count > children.length) count = children.length;
 
-        final itemWidth = count == 1
-            ? width
-            : (width - ((count - 1) * spacing)) / count;
+        final itemWidth = count == 1 ? width : (width - ((count - 1) * spacing)) / count;
 
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
           children: children.map((child) {
-            return SizedBox(
-              width: itemWidth,
-              child: child,
-            );
+            return SizedBox(width: itemWidth, child: child);
           }).toList(),
         );
       },
@@ -836,9 +792,7 @@ class _ResponsiveWrap extends StatelessWidget {
 class _ResponsiveSectionWrap extends StatelessWidget {
   final List<Widget> children;
 
-  const _ResponsiveSectionWrap({
-    required this.children,
-  });
+  const _ResponsiveSectionWrap({required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -853,10 +807,7 @@ class _ResponsiveSectionWrap extends StatelessWidget {
           spacing: spacing,
           runSpacing: spacing,
           children: children.map((child) {
-            return SizedBox(
-              width: itemWidth,
-              child: child,
-            );
+            return SizedBox(width: itemWidth, child: child);
           }).toList(),
         );
       },
@@ -867,29 +818,24 @@ class _ResponsiveSectionWrap extends StatelessWidget {
 class _DecoratedKpiCard extends StatelessWidget {
   final _KpiData data;
 
-  const _DecoratedKpiCard({
-    required this.data,
-  });
+  const _DecoratedKpiCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 178,
+      height: 160,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            data.color,
-            Color.lerp(data.color, Colors.white, .22)!,
-          ],
+          colors: [data.color, Color.lerp(data.color, Colors.white, .22)!],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: data.color.withOpacity(.22),
-            blurRadius: 18,
-            offset: const Offset(0, 9),
+            color: data.color.withOpacity(.25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -902,60 +848,37 @@ class _DecoratedKpiCard extends StatelessWidget {
               height: 92,
               width: 92,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.13),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 22,
-            bottom: -30,
-            child: Container(
-              height: 72,
-              width: 72,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(.10),
+                color: Colors.white.withOpacity(.12),
                 shape: BoxShape.circle,
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(17),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      height: 46,
-                      width: 46,
+                      height: 48,
+                      width: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.20),
+                        color: Colors.white.withOpacity(.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Icon(
-                        data.icon,
-                        color: Colors.white,
-                        size: 26,
-                      ),
+                      child: Icon(data.icon, color: Colors.white, size: 28),
                     ),
-                    const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.18),
-                        borderRadius: BorderRadius.circular(999),
+                        color: Colors.white.withOpacity(.15),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        "Live",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        "Real-time",
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ],
@@ -963,35 +886,13 @@ class _DecoratedKpiCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   data.value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   data.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  data.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -1023,16 +924,16 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xffE5E7EB)),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xffEEF2F7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.045),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(.035),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -1041,54 +942,44 @@ class _SectionCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                height: 46,
-                width: 46,
+                height: 48,
+                width: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xff2563EB).withOpacity(.10),
+                  color: const Color(0xff2563EB).withOpacity(.08),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  icon,
-                  color: const Color(0xff2563EB),
-                ),
+                child: Icon(icon, color: const Color(0xff2563EB), size: 24),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xff111827),
-                      ),
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xff1E293B)),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xff6B7280),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(color: Color(0xff64748B), fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
               TextButton(
                 onPressed: onAction,
-                child: Text(actionText),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(actionText, style: const TextStyle(fontWeight: FontWeight.w800)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           child,
         ],
       ),
@@ -1100,56 +991,40 @@ class _QuickActionCard extends StatelessWidget {
   final _QuickActionData data;
   final VoidCallback onTap;
 
-  const _QuickActionCard({
-    required this.data,
-    required this.onTap,
-  });
+  const _QuickActionCard({required this.data, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xffF9FAFB),
-      borderRadius: BorderRadius.circular(18),
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
-          height: 124,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xffEEF2F7)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xffF1F5F9)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                height: 44,
-                width: 44,
+                height: 48,
+                width: 48,
                 decoration: BoxDecoration(
                   color: data.color.withOpacity(.12),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  data.icon,
-                  color: data.color,
-                  size: 23,
-                ),
+                child: Icon(data.icon, color: data.color, size: 24),
               ),
-              const SizedBox(height: 10),
-              Flexible(
-                child: Text(
-                  data.title,
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xff111827),
-                    fontSize: 12,
-                    height: 1.15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+              const SizedBox(height: 12),
+              Text(
+                data.title,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xff334155), fontSize: 11, fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -1178,56 +1053,31 @@ class _AttendanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SoftCard(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _InitialAvatar(
-                text: studentName,
-                color: const Color(0xff2563EB),
-              ),
-              const SizedBox(width: 10),
+              _InitialAvatar(text: studentName, color: const Color(0xff2563EB)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   studentName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xff111827),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: const TextStyle(color: Color(0xff1E293B), fontSize: 15, fontWeight: FontWeight.w900),
                 ),
               ),
-              const SizedBox(width: 8),
               _StatusBadge(status: status),
             ],
           ),
+          const SizedBox(height: 16),
+          _InfoRow(icon: Icons.meeting_room_rounded, label: "Unit", value: roomNo),
           const SizedBox(height: 14),
-          _InfoRow(
-            icon: Icons.bed_rounded,
-            label: "Room",
-            value: roomNo,
-          ),
-          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: _MiniInfoBox(
-                  label: "Check In",
-                  value: checkIn,
-                  icon: Icons.login_rounded,
-                ),
-              ),
+              Expanded(child: _MiniInfoBox(label: "Entry", value: checkIn, icon: Icons.login_rounded)),
               const SizedBox(width: 10),
-              Expanded(
-                child: _MiniInfoBox(
-                  label: "Check Out",
-                  value: checkOut,
-                  icon: Icons.logout_rounded,
-                ),
-              ),
+              Expanded(child: _MiniInfoBox(label: "Exit", value: checkOut, icon: Icons.logout_rounded)),
             ],
           ),
         ],
@@ -1260,16 +1110,13 @@ class _VisitorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SoftCard(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
       child: Column(
         children: [
           Row(
             children: [
-              _InitialAvatar(
-                text: visitorName,
-                color: const Color(0xffEA580C),
-              ),
-              const SizedBox(width: 12),
+              _InitialAvatar(text: visitorName, color: const Color(0xffEA580C)),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1278,67 +1125,49 @@ class _VisitorCard extends StatelessWidget {
                       visitorName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xff111827),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: const TextStyle(color: Color(0xff1E293B), fontSize: 14, fontWeight: FontWeight.w900),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 2),
                     Text(
-                      "$studentName • Room $roomNo",
+                      "$studentName • Rm $roomNo",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xff6B7280),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(color: Color(0xff64748B), fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
               _StatusBadge(status: status),
             ],
           ),
           if (canTakeAction) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OutlinedButton(
                     onPressed: isLoading ? null : onCancel,
-                    icon: isLoading
-                        ? const SizedBox(
-                      height: 14,
-                      width: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                        : const Icon(Icons.close_rounded, size: 18),
-                    label: const Text("Cancel"),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xffDC2626),
                       side: const BorderSide(color: Color(0xffFECACA)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
+                    child: isLoading ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text("Reject", style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton.icon(
+                  child: ElevatedButton(
                     onPressed: isLoading ? null : onApprove,
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text("Approve"),
-                    style: FilledButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xff16A34A),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
+                    child: const Text("Approve", style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
                 ),
               ],
@@ -1372,30 +1201,22 @@ class _ComplaintCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SoftCard(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _IconBox(
-                icon: Icons.support_agent_rounded,
-                color: const Color(0xffDC2626),
-              ),
-              const SizedBox(width: 12),
+              _IconBox(icon: Icons.support_agent_rounded, color: const Color(0xffDC2626)),
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xff111827),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: const TextStyle(color: Color(0xff1E293B), fontSize: 15, fontWeight: FontWeight.w900),
                 ),
               ),
-              const SizedBox(width: 8),
               _StatusBadge(status: status),
             ],
           ),
@@ -1404,38 +1225,16 @@ class _ComplaintCard extends StatelessWidget {
             description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xff6B7280),
-              fontSize: 12,
-              height: 1.35,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(color: Color(0xff64748B), fontSize: 13, height: 1.4, fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (studentName != "--")
-                _SmallPill(
-                  text: studentName,
-                  icon: Icons.person_rounded,
-                ),
-              if (roomNo != "--")
-                _SmallPill(
-                  text: "Room $roomNo",
-                  icon: Icons.bed_rounded,
-                ),
-              if (priority != "--")
-                _SmallPill(
-                  text: priority,
-                  icon: Icons.flag_rounded,
-                ),
-              if (date != "--")
-                _SmallPill(
-                  text: date,
-                  icon: Icons.calendar_month_rounded,
-                ),
+              if (studentName != "--") _SmallPill(text: studentName, icon: Icons.person_rounded),
+              if (roomNo != "--") _SmallPill(text: "Rm $roomNo", icon: Icons.bed_rounded),
+              if (priority != "--") _SmallPill(text: priority, icon: Icons.flag_rounded),
             ],
           ),
         ],
@@ -1462,69 +1261,38 @@ class _AnnouncementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SoftCard(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              _IconBox(
-                icon: Icons.campaign_rounded,
-                color: const Color(0xff2563EB),
-              ),
-              const SizedBox(width: 12),
+              _IconBox(icon: Icons.campaign_rounded, color: const Color(0xff2563EB)),
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xff111827),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: const TextStyle(color: Color(0xff1E293B), fontSize: 15, fontWeight: FontWeight.w900),
                 ),
               ),
-              Icon(
-                isActive ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                color: isActive
-                    ? const Color(0xff16A34A)
-                    : const Color(0xffDC2626),
-                size: 20,
-              ),
+              Icon(isActive ? Icons.check_circle_rounded : Icons.cancel_rounded, color: isActive ? const Color(0xff16A34A) : const Color(0xff94A3B8), size: 18),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             message,
-            maxLines: 3,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xff6B7280),
-              fontSize: 12,
-              height: 1.35,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(color: Color(0xff64748B), fontSize: 13, height: 1.4, fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Wrap(
             spacing: 8,
-            runSpacing: 8,
             children: [
-              if (category != "--")
-                _SmallPill(
-                  text: category,
-                  icon: Icons.category_rounded,
-                ),
-              if (priority != "--")
-                _SmallPill(
-                  text: priority,
-                  icon: Icons.flag_rounded,
-                ),
-              _SmallPill(
-                text: isActive ? "Active" : "Inactive",
-                icon: isActive ? Icons.check_rounded : Icons.close_rounded,
-              ),
+              if (category != "--") _SmallPill(text: category, icon: Icons.category_rounded),
+              _SmallPill(text: isActive ? "Active" : "Archived", icon: Icons.history_rounded),
             ],
           ),
         ],
@@ -1537,20 +1305,17 @@ class _SoftCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? margin;
 
-  const _SoftCard({
-    required this.child,
-    this.margin,
-  });
+  const _SoftCard({required this.child, this.margin});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: margin,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xffF9FAFB),
+        color: const Color(0xffF8FAFC),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xffEEF2F7)),
+        border: Border.all(color: const Color(0xffF1F5F9)),
       ),
       child: child,
     );
@@ -1561,10 +1326,7 @@ class _IconBox extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _IconBox({
-    required this.icon,
-    required this.color,
-  });
+  const _IconBox({required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -1572,13 +1334,10 @@ class _IconBox extends StatelessWidget {
       height: 42,
       width: 42,
       decoration: BoxDecoration(
-        color: color.withOpacity(.12),
-        borderRadius: BorderRadius.circular(14),
+        color: color.withOpacity(.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        icon,
-        color: color,
-      ),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 }
@@ -1587,32 +1346,23 @@ class _InitialAvatar extends StatelessWidget {
   final String text;
   final Color color;
 
-  const _InitialAvatar({
-    required this.text,
-    required this.color,
-  });
+  const _InitialAvatar({required this.text, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final initial = text.trim().isEmpty || text == "--"
-        ? "?"
-        : text.trim().substring(0, 1).toUpperCase();
+    final initial = text.trim().isEmpty || text == "--" ? "?" : text.trim().substring(0, 1).toUpperCase();
 
     return Container(
-      height: 42,
-      width: 42,
+      height: 44,
+      width: 44,
       decoration: BoxDecoration(
         color: color.withOpacity(.12),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: TextStyle(
-          color: color,
-          fontSize: 16,
-          fontWeight: FontWeight.w900,
-        ),
+        style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -1620,55 +1370,31 @@ class _InitialAvatar extends StatelessWidget {
 
 class _StatusBadge extends StatelessWidget {
   final String status;
-
-  const _StatusBadge({
-    required this.status,
-  });
+  const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
     final normalized = status.toLowerCase();
+    Color textColor = const Color(0xff64748B);
+    Color background = const Color(0xffF1F5F9);
 
-    Color textColor = const Color(0xff6B7280);
-    Color background = const Color(0xffF3F4F6);
-
-    if (normalized == "present" ||
-        normalized == "approved" ||
-        normalized == "active" ||
-        normalized == "resolved" ||
-        normalized == "completed") {
+    if (["present", "approved", "active", "resolved", "completed"].contains(normalized)) {
       textColor = const Color(0xff15803D);
       background = const Color(0xffDCFCE7);
-    } else if (normalized == "pending" ||
-        normalized == "open" ||
-        normalized == "in progress" ||
-        normalized == "in_progress") {
+    } else if (["pending", "open", "in progress", "in_progress"].contains(normalized)) {
       textColor = const Color(0xffC2410C);
       background = const Color(0xffFFEDD5);
-    } else if (normalized == "absent" ||
-        normalized == "rejected" ||
-        normalized == "cancelled" ||
-        normalized == "canceled" ||
-        normalized == "inactive") {
+    } else if (["absent", "rejected", "cancelled", "canceled", "inactive"].contains(normalized)) {
       textColor = const Color(0xffB91C1C);
       background = const Color(0xffFEE2E2);
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(10)),
       child: Text(
-        status == "--" ? "Unknown" : status,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-        ),
+        status == "--" ? "Unknown" : status.toUpperCase(),
+        style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
       ),
     );
   }
@@ -1679,42 +1405,16 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 17,
-          color: const Color(0xff6B7280),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          "$label: ",
-          style: const TextStyle(
-            color: Color(0xff6B7280),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xff111827),
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
+        Icon(icon, size: 16, color: const Color(0xff94A3B8)),
+        const SizedBox(width: 8),
+        Text("$label: ", style: const TextStyle(color: Color(0xff64748B), fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(value, style: const TextStyle(color: Color(0xff1E293B), fontSize: 12, fontWeight: FontWeight.w800)),
       ],
     );
   }
@@ -1725,55 +1425,28 @@ class _MiniInfoBox extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const _MiniInfoBox({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
+  const _MiniInfoBox({required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 58),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xffE5E7EB)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xffF1F5F9)),
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 17,
-            color: const Color(0xff2563EB),
-          ),
-          const SizedBox(width: 7),
+          Icon(icon, size: 16, color: const Color(0xff2563EB)),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xff6B7280),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xff111827),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+                Text(label, style: const TextStyle(color: Color(0xff64748B), fontSize: 9, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(color: Color(0xff1E293B), fontSize: 11, fontWeight: FontWeight.w900)),
               ],
             ),
           ),
@@ -1787,36 +1460,19 @@ class _SmallPill extends StatelessWidget {
   final String text;
   final IconData icon;
 
-  const _SmallPill({
-    required this.text,
-    required this.icon,
-  });
+  const _SmallPill({required this.text, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xffEFF6FF),
-        borderRadius: BorderRadius.circular(999),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: const Color(0xffF1F5F9), borderRadius: BorderRadius.circular(8)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 13,
-            color: const Color(0xff2563EB),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xff2563EB),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          Icon(icon, size: 12, color: const Color(0xff64748B)),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Color(0xff334155), fontSize: 11, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -1828,48 +1484,20 @@ class _EmptyStateCard extends StatelessWidget {
   final String title;
   final String message;
 
-  const _EmptyStateCard({
-    required this.icon,
-    required this.title,
-    required this.message,
-  });
+  const _EmptyStateCard({required this.icon, required this.title, required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
-      decoration: BoxDecoration(
-        color: const Color(0xffF9FAFB),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xffEEF2F7)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 42,
-            color: const Color(0xff9CA3AF),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xff111827),
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xff6B7280),
-              fontSize: 12,
-              height: 1.35,
-            ),
-          ),
+          Icon(icon, size: 48, color: const Color(0xffCBD5E1)),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(color: Color(0xff475569), fontSize: 15, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 6),
+          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xff94A3B8), fontSize: 12, height: 1.4)),
         ],
       ),
     );
@@ -1880,42 +1508,24 @@ class _ErrorCard extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorCard({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorCard({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xffFEF2F2),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xffFECACA)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            color: Color(0xffDC2626),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Color(0xffB91C1C),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text("Retry"),
-          ),
+          const Icon(Icons.error_outline_rounded, color: Color(0xffDC2626)),
+          const SizedBox(width: 14),
+          Expanded(child: Text(message, style: const TextStyle(color: Color(0xffB91C1C), fontSize: 13, fontWeight: FontWeight.w700))),
+          TextButton(onPressed: onRetry, child: const Text("Retry", style: TextStyle(fontWeight: FontWeight.w900))),
         ],
       ),
     );

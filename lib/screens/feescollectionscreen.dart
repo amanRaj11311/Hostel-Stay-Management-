@@ -655,8 +655,15 @@ class _FeeFormDialogState extends State<FeeFormDialog> {
       paidAmountController.text = (widget.fee!["paidAmount"] ?? "").toString();
       receiptNoController.text = widget.fee!["receiptNo"] ?? "";
       monthController.text = widget.fee!["month"] ?? "";
-      status = widget.fee!["status"] ?? "paid";
-      paymentMode = widget.fee!["paymentMode"] ?? "cash";
+      
+      // Validate status dropdown value
+      String statusValue = (widget.fee!["status"] ?? "paid").toString().toLowerCase();
+      status = (["paid", "pending", "partial", "overdue"].contains(statusValue)) ? statusValue : "paid";
+      
+      // Validate paymentMode dropdown value
+      String paymentModeValue = (widget.fee!["paymentMode"] ?? "cash").toString().toLowerCase();
+      paymentMode = (["cash", "upi", "bank"].contains(paymentModeValue)) ? paymentModeValue : "cash";
+      
       if (widget.fee!["dueDate"] != null) {
         dueDate = DateTime.parse(widget.fee!["dueDate"]);
       }

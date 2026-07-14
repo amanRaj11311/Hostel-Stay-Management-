@@ -798,18 +798,21 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
   @override
   void initState() {
     super.initState();
-    _currentBlock = widget.selectedBlock;
+    _currentBlock = (["A", "B", "C", "D"].contains(widget.selectedBlock)) ? widget.selectedBlock : "A";
     _currentBathroom = widget.attachedBathroom;
     _currentWifi = widget.wifiAvailable;
-    _currentStatus = widget.roomStatus;
+    _currentStatus = (["available", "full", "maintenance"].contains(widget.roomStatus)) ? widget.roomStatus : "available";
 
-    // Initialize dropdown values from controllers
-    _currentRoomType = widget.roomTypeController.text.isEmpty ? "AC" : widget.roomTypeController.text;
-    _currentSharing = widget.sharingController.text.isEmpty ? "2 Sharing" : widget.sharingController.text;
+    // Initialize dropdown values from controllers with validation
+    String roomTypeValue = widget.roomTypeController.text.isEmpty ? "AC" : widget.roomTypeController.text;
+    _currentRoomType = (["AC", "Non AC"].contains(roomTypeValue)) ? roomTypeValue : "AC";
+    
+    String sharingValue = widget.sharingController.text.isEmpty ? "2 Sharing" : widget.sharingController.text;
+    _currentSharing = (["1 Sharing", "2 Sharing", "3 Sharing", "4 Sharing"].contains(sharingValue)) ? sharingValue : "2 Sharing";
 
-    // Ensure controllers have initial values if they were empty
-    if (widget.roomTypeController.text.isEmpty) widget.roomTypeController.text = _currentRoomType;
-    if (widget.sharingController.text.isEmpty) widget.sharingController.text = _currentSharing;
+    // Ensure controllers have valid values
+    widget.roomTypeController.text = _currentRoomType;
+    widget.sharingController.text = _currentSharing;
   }
 
   @override
@@ -1014,7 +1017,7 @@ class _RoomFormDialogState extends State<RoomFormDialog> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BoxBorderSide(color: Color(0xff0891B2), width: 1.5)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xff0891B2), width: 1.5)),
           ),
         ),
       ],

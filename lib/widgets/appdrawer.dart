@@ -322,6 +322,8 @@ class _AppDrawerState extends State<AppDrawer> {
                 icon: const Icon(Icons.logout, color: Colors.red),
                 label: const Text(
                   "Logout",
+                  textAlign: TextAlign.center,
+
                   style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
